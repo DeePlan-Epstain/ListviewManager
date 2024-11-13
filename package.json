@@ -1,0 +1,45 @@
+{
+  "name": "listview-manager",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=16.13.0 <17.0.0"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "clean": "gulp clean",
+    "test": "gulp test",
+    "build": " npm run clean && npm run bundle && npm run package-solution && npm run open-explorer"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
+    "@material-ui/core": "^4.12.4",
+    "@microsoft/decorators": "1.16.0",
+    "@microsoft/sp-core-library": "1.16.0",
+    "@microsoft/sp-dialog": "1.16.0",
+    "@microsoft/sp-listview-extensibility": "1.16.0",
+    "@mui/material": "^5.15.12",
+    "@pnp/graph": "^3.23.0",
+    "@pnp/sp": "^3.23.0",
+    "@pnp/spfx-controls-react": "^3.11.0",
+    "axios": "^1.6.7",
+    "react-beautiful-dnd": "^13.1.1",
+    "tslib": "2.3.1"
+  },
+  "devDependencies": {
+    "@microsoft/eslint-config-spfx": "1.16.0",
+    "@microsoft/eslint-plugin-spfx": "1.16.0",
+    "@microsoft/rush-stack-compiler-4.5": "0.2.2",
+    "@microsoft/sp-build-web": "1.16.0",
+    "@microsoft/sp-module-interfaces": "1.16.0",
+    "@rushstack/eslint-config": "2.5.1",
+    "@types/react-beautiful-dnd": "^13.1.8",
+    "@types/react-dom": "^18.2.22",
+    "@types/stylis": "^4.2.6",
+    "@types/webpack-env": "~1.15.2",
+    "ajv": "^6.12.5",
+    "gulp": "4.0.2",
+    "typescript": "4.5.5"
+  }
+}

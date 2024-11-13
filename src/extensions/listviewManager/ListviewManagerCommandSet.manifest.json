@@ -1,0 +1,20 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/command-set-extension-manifest.schema.json",
+  "id": "8cafb949-073a-4a69-937e-05b37bf163ea",
+  "alias": "ListviewManagerCommandSet",
+  "componentType": "Extension",
+  "extensionType": "ListViewCommandSet",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "items": {
+    "Approval_Document": {
+      "position": 8,
+      "title": {
+        "default": "לאישור מסמך"
+      },
+      "iconImageUrl": "../listviewManager/assets/imgs/approvalDocumentIcon.svg",
+      "type": "command"
+    }
+  }
+}

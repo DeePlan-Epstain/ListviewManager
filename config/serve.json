@@ -1,0 +1,31 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/spfx-serve.schema.json",
+  "port": 4321,
+  "https": true,
+  "serveConfigurations": {
+    "default": {
+      "pageUrl": "https://epstin100.sharepoint.com/sites/EpsteinPortal/SiteAssets/Forms/AllItems.aspx",
+      "customActions": {
+        "8cafb949-073a-4a69-937e-05b37bf163ea": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    },
+    "listviewManager": {
+      "pageUrl": "https://epstin100.sharepoint.com/sites/EpsteinPortal/SiteAssets/Forms/AllItems.aspx",
+      "customActions": {
+        "8cafb949-073a-4a69-937e-05b37bf163ea": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    }
+  }
+}

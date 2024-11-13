@@ -1,0 +1,80 @@
+.reviewDocumentModalContentContainer {
+    display: flex;
+    gap: 1em;
+    width: 100%;
+    height: calc(100% - 23px - 37px);
+}
+
+.reviewDocumentModalContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+    width: 100%;
+    height: 100%;
+    transition: 0.2s;
+}
+
+// approvers order
+.approversOrderContainer {
+    display: flex;
+    align-self: baseline;
+    flex-direction: column;
+    gap: 1em;
+    width: 200px;
+    height: 100%;
+
+    >span {
+        font-weight: 600;
+        letter-spacing: 0.02rem;
+    }
+}
+
+.approversOrderList {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: calc(100% - 23px);
+    // overflow: auto;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    padding-inline-start: 0;
+}
+
+.approversOrderItem {
+    position: relative;
+    padding: 0.8em;
+    border: 1px solid rgb(128, 128, 128, 0.5);
+    border-radius: 7px;
+    margin: 5px;
+
+    >span {
+        position: relative;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .approversOrderItemBackground {
+        position: absolute;
+        top: 0;
+        bottom: 50%;
+        left: 0;
+        right: 50%;
+        width: 0;
+        height: 100%;
+        border-radius: 7px;
+        transition: 0.2s ease-out;
+    }
+
+    // &:hover {
+    //     span {
+    //         color: white;
+    //     }
+    //     .approversOrderItemBackground {
+    //         width: 100%;
+    //         background-color: rgb(0, 30, 255, 0.6);
+    //     }
+    // }
+}
