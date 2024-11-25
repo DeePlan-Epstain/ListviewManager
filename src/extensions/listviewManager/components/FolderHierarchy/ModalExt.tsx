@@ -14,18 +14,30 @@ import "@pnp/sp/webs";
 import "@pnp/sp/items";
 import "@pnp/sp/folders";
 import "@pnp/sp/folders";
-
-
+import Autocomplete from "@material-ui/lab/Autocomplete";
+import { ThemeProvider, StylesProvider } from "@material-ui/core/styles";
+import { jss } from "../../models/jss";
+import { theme } from "../../models/theme";
 
 
 
 export default class ModalCreateProject extends React.Component<ModalExtProps, ModalExtStates> {
     private _sp: SPFI;
+    private _spWithCustomUrl: SPFI;
+
     constructor(props: ModalExtProps | Readonly<ModalExtProps>) {
         super(props)
         this.state = {
             open: false,
-            error: false
+            error: false,
+            isSave: false,
+            FoldersHierarchy: [],
+            FolderHierarchy: {},
+            FolderHierarchyValidate: false,
+            NewFolderName: "",
+            NewFolderNameValidate: false,
+
+
         }
     }
 
@@ -35,6 +47,8 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
     }
     componentDidMount(): void {
         this._sp = spfi().using(SPFx(this.props.context));
+        this._spWithCustomUrl = spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(this.props.context));
+
         this.setState({
             open: true
         })
@@ -48,28 +62,71 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
         try {
 
-            const listFolders = await this._sp.web.lists.getByTitle("FolderHierarchy").rootFolder.folders();
-            console.log(listFolders);
-            
-            listFolders.forEach(async (item: any) => {
-                console.log(item.Name);
-                
-                const destinationUrl = `${this.props.selectedRow.FileRef}/${item.Name}`;
-                await this._sp.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${item.Name}`).copyByPath(destinationUrl, true);
+            const listFolders = await this._spWithCustomUrl.web.lists.getByTitle("FolderHierarchy").rootFolder.folders();
+
+            let listFoldersNoForms = listFolders.filter((folder: any) => folder.Name !== "Forms");
+
+            console.log(listFoldersNoForms);
+
+
+            // listFolders.forEach(async (item: any) => {
+            //     console.log(item.Name);
+            //     const destinationUrl = `${this.props.selectedRow.FileRef}/${item.Name}`;
+            //     await this._sp.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${item.Name}`).copyByPath(destinationUrl, true);
+            // })
+            this.setState({
+                FoldersHierarchy: listFoldersNoForms,
+
             })
-        }catch(err){
+        } catch (err) {
             this.setState({
 
-                    error:true
-
+                error: true
             })
         }
 
-
         // this.props.unMountDialog()
-
-
     }
+
+    createFolder = async () => {
+        this.setState({ isSave: true })
+        if (this.validate()) {
+        
+         const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
+         console.log("destinationUrl",destinationUrl);
+        
+
+         
+         await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
+         this.closeModal();
+         location.reload();
+
+        
+        } else {
+            this.setState({ isSave: true })
+        }
+    }
+
+    validate = () => {
+        const isEmpty = (value: any) => value === "" || value === undefined || value === null;
+        let flag = true;
+
+        // Validate FolderHierarchy
+        if (isEmpty(this.state.FolderHierarchy?.Name)) {
+            this.setState({ FolderHierarchyValidate: true });
+            flag = false;
+        }
+
+        // Validate NewFolderName
+        if (isEmpty(this.state.NewFolderName)) {
+            this.setState({ NewFolderNameValidate: true });
+            flag = false;
+        }
+
+        return flag;
+    };
+
+
     clearModal = () => {
         this.setState({
 
@@ -86,36 +143,104 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
     }
 
+    onchange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+    
+        // עדכון ה-state עבור השדה שהשתנה
+        const newState = { [e.target.name]: e.target.value } as unknown as Pick<ModalExtStates, keyof ModalExtStates>;
+    
+        // בדיקת ולידציה עבור NewFolderName
+        if (name === "NewFolderName") {
+            const hasInvalidChars = this.validateFolderName(value);
+            newState.NewFolderNameValidate = hasInvalidChars; // true אם יש תווים לא חוקיים
+        }
+    
+        this.setState(newState);
+    };
+    validateFolderName = (value:any) => {
+        const invalidChars = /[\\/:*?"<>|]/; // תווים שאינם חוקיים
+        return invalidChars.test(value);
+      };
+
     public render(): React.ReactElement<ModalExtProps> {
         return (
-            <div>
+            <StylesProvider jss={jss}>
+                <ThemeProvider theme={theme}>
 
 
-                <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
-                    <div style={{ display: "flex", justifyContent: "center" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
-                        {this.state.error ?
+                    <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
+                        <div style={{ display: "flex", justifyContent: "center", flexDirection: "column" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
+                            <div className="modal-header" >
+                                <h2>יצירת היררכית תיקיות</h2>
+                            </div>
+                            <div className="modal-body">
+                                <Autocomplete
+                                    id="country-select-demo"
+                                    onChange={(event, newValue) => {
+                                        console.log(newValue);
+
+                                        let s = this.state.FoldersHierarchy.find((folder) => folder.Name === newValue)
 
 
+                                        this.setState({ FolderHierarchy: s, FolderHierarchyValidate: false });
+                                    }}
+                                    value={this.state.FolderHierarchy?.Name || ""}
+                                    options={this.state.FoldersHierarchy.map((folder) => folder.Name)}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="outlined"
+                                            size="small"
+                                            label="בחר היררכית תיקיות"
+                                            fullWidth
+                                            error={this.state.FolderHierarchyValidate}
 
-                            <div className="error alert">
-                                <div className="alert-body">
-                                    Hierarchical folder exit failed Contact the system administrator.
-                                </div>
+                                        />
+                                    )}
+                                />
+                                <TextField
+                                    name="NewFolderName"
+                                    error={this.state.NewFolderNameValidate}
+                                    helperText={
+                                      this.state.NewFolderNameValidate
+                                        ? "שם התיקייה אינו יכול לכלול תווים כמו \\ / : * ? \" < > |"
+                                        : ""
+                                    }
+                                    
+                                    onChange={this.onchange}
+                                    value={this.state.NewFolderName}
+                                    className="text-field"
+                                    id="outlined-basic"
+                                    variant="outlined"
+                                    label="שם התיקיה"
+                                    size="small"
+                                    fullWidth
+                                    style={{ marginTop: '16px' }}
+                                />
+                            </div>
+                            <div className="modal-footer">
+                                <Button
+                                    variant="contained"
+                                    style={{ backgroundColor: "green", color: "white" }}
+
+                                    onClick={this.createFolder}
+                                >
+                                    אישור
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    style={{ borderColor: "red", color: "red" }}
+
+                                    onClick={this.closeModal}
+                                >
+                                    ביטול
+                                </Button>
                             </div>
 
-                            :
-                            <div className="success alert">
-                                <div className="alert-body">
-                                    The folder hierarchy has been created successfully.
-
-                                </div>
-                            </div>
-
-                        }
-                    </div>
-                </div>
-
-            </div >
+                        </div >
+                    </div >
+                </ThemeProvider>
+            </StylesProvider>
         );
     }
 }

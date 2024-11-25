@@ -221,3 +221,16 @@
   box-shadow: 0px 0px 12px 7px rgba(255, 200, 150, 0.8) inset;
   border: 5px solid red;
 }
+
+.modal-header{
+  display: flex;
+  justify-content: center;
+}
+
+.modal-footer{
+  display: flex;
+  justify-content: space-evenly;
+}
+.modal-body{
+  margin: 20px 30px;
+}

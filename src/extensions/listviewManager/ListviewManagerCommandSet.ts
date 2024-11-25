@@ -21,6 +21,7 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 // } from "./components/RenameFile/RenameFile";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
+import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -45,6 +46,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
+    console.log("this.isAllowedToMoveFile",this.isAllowedToMoveFile);
+    
 
     this.currUser = await this.sp.web.currentUser();
     if (!this.allowedUsers.includes(this.currUser.Email.toLocaleLowerCase())) {
@@ -56,8 +59,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
     compareOneCommand.visible = false;
-    // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    // compareTwoCommand.visible = false;
+     const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+     if(this.isAllowedToMoveFile === false){
+       compareTwoCommand.visible = false;
+      }
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // compareThreeCommand.visible = false;
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
@@ -74,28 +79,44 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   public async onExecute(
     event: IListViewCommandSetExecuteEventParameters
   ): Promise<void> {
+
+    const fullUrl = window.location.href;
+    console.log(fullUrl);
+    
+    // Extract the "id" parameter from the query string
+    const urlParams = new URLSearchParams(fullUrl.split('?')[1]);
+    const folderPath = urlParams.get('id');
+  
+    // If "id" exists, decode it to get the relative path
+    let finalPath = folderPath ? decodeURIComponent(folderPath) : null;
+  
+    if (finalPath) {
+      console.log("Final Server Relative URL:", finalPath);
+    } else {
+
+      finalPath = fullUrl.split('/Forms')[0] // Assuming "Forms" is in the URL structure
+    }
+    console.log(finalPath);
+    
+  
     const selectedFiles = event.selectedRows.map((SR: any) => {
       const keys = SR._values.keys();
       const row: any = {};
       Array.from(keys).forEach(
         (key: any) => (row[key] = SR.getValueByName(key))
       );
-
       return row;
     });
 
-    const selectedRow = selectedFiles[0];
-    const { libraryName, libraryID } = await this.extractLibraryDetails(
-      selectedRow?.FileRef
-    );
+
 
     switch (event.itemId) {
       case "Approval_Document":
         this._renderApproveDocumentModal(selectedFiles[0], "Approval");
         break;
-      // case "folderHierarchy":
-      //   this._renderfolderHierarchytModal(selectedFiles[0], "Approval");
-      //   break;
+      case "folderHierarchy":
+        this._renderfolderHierarchytModal(finalPath, "Approval");
+        break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
       //   break;
@@ -141,6 +162,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   extractLibraryDetails = async (
     fileRef: string
   ): Promise<{ libraryName: string; libraryID: string }> => {
+   console.log(fileRef);
+   
     const parts = fileRef.split("/");
     const libraryUrlPart = parts.length > 2 ? parts[3] : "";
 
@@ -224,14 +247,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private _renderfolderHierarchytModal(
-    selectedRow: any,
+    finalPath: any,
     modalInterface: "Review" | "Approval"
   ) {
-    const element: React.ReactElement<ApproveDocumentProps> =
+    const element: React.ReactElement<ModalExtProps> =
       React.createElement(ModalExt, {
         sp: this.sp,
         context: this.context as any,
-        selectedRow,
+        finalPath,
         modalInterface,
         currUser: this.currUser,
         unMountDialog: this._closeDialogContainer,

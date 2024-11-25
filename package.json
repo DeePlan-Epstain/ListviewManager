@@ -25,7 +25,9 @@
     "@pnp/spfx-controls-react": "^3.11.0",
     "axios": "^1.6.7",
     "react-beautiful-dnd": "^13.1.1",
-    "tslib": "2.3.1"
+    "tslib": "2.3.1",
+    "@material-ui/lab": "^4.0.0-alpha.60",
+    "jss-rtl": "^0.3.0"
   },
   "devDependencies": {
     "@microsoft/eslint-config-spfx": "1.16.0",

@@ -15,6 +15,16 @@
       },
       "iconImageUrl": "../listviewManager/assets/imgs/approvalDocumentIcon.svg",
       "type": "command"
+    } 
+    ,
+    "folderHierarchy": {
+      "position": 2,
+      "title": {
+        "default": "יצירת היררכית תיקיות"
+      },
+      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "type": "command"
+      
     }
   }
 }
