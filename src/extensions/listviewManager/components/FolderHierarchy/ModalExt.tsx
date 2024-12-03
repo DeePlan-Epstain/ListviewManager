@@ -19,6 +19,8 @@ import { ThemeProvider, StylesProvider } from "@material-ui/core/styles";
 import { jss } from "../../models/jss";
 import { theme } from "../../models/theme";
 
+import CircularProgress from '@mui/material/CircularProgress';
+
 
 
 export default class ModalCreateProject extends React.Component<ModalExtProps, ModalExtStates> {
@@ -98,6 +100,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
          
          await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
+            
          this.closeModal();
          location.reload();
 
@@ -171,9 +174,9 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                     <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
                         <div style={{ display: "flex", justifyContent: "center", flexDirection: "column" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
                             <div className="modal-header" >
-                                <h2>יצירת היררכית תיקיות</h2>
+                                <h2  style={{margin:1}}>יצירת היררכית תיקיות</h2>
                             </div>
-                            <div className="modal-body">
+                            <div  className="modal-body">
                                 <Autocomplete
                                     id="country-select-demo"
                                     onChange={(event, newValue) => {
@@ -217,12 +220,15 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     fullWidth
                                     style={{ marginTop: '16px' }}
                                 />
+                            <div style={{fontSize: 12, textAlign: "right", direction: "rtl",marginTop:7}}>
+    *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
+</div>
                             </div>
                             <div className="modal-footer">
                                 <Button
                                     variant="contained"
                                     style={{ backgroundColor: "green", color: "white" }}
-
+                                    disabled={this.state.isSave}
                                     onClick={this.createFolder}
                                 >
                                     אישור
@@ -236,6 +242,15 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     ביטול
                                 </Button>
                             </div>
+                            <div>
+                            {this.state.isSave &&
+                                <Box sx={{ display: 'flex', justifyContent:"center",margin:10 }}>
+                            <CircularProgress />
+                            </Box>
+                            }
+
+                            </div>
+                            
 
                         </div >
                     </div >
