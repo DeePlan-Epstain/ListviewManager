@@ -93,20 +93,27 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
     createFolder = async () => {
         this.setState({ isSave: true })
         if (this.validate()) {
-        
-         const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
-         console.log("destinationUrl",destinationUrl);
-        
+            try {
 
-         
-         await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
-            
-         this.closeModal();
-         location.reload();
+                const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
+                console.log("destinationUrl", destinationUrl);
+                
+                
+                
+                await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
+                
+                this.closeModal();
+                location.reload();
+                
+            }catch (e) {
+                console.log(e);
+                
+            this.setState({ isSave: false });
 
-        
+            }
+
         } else {
-            this.setState({ isSave: true })
+            this.setState({ isSave: false });
         }
     }
 
@@ -132,38 +139,49 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
     clearModal = () => {
         this.setState({
+            isSave: false,
 
+            FolderHierarchy: {},
+            FolderHierarchyValidate: false,
+            NewFolderName: "",
+            NewFolderNameValidate: false,
         })
         return 0;
     }
 
     closeModal = async () => { // close the modal.
 
-        let r: number = await this.clearModal();
+        this.setState({
+            isSave: false,
 
-        document.getElementById("modal-back2").className = "modal-back2"
-        document.getElementById("modal-content2").className = "modal-content2"
-
+            FolderHierarchy: {},
+            FolderHierarchyValidate: false,
+            NewFolderName: "",
+            NewFolderNameValidate: false,
+        },()=>{
+            document.getElementById("modal-back2").className = "modal-back2"
+            document.getElementById("modal-content2").className = "modal-content2"
+        })
     }
 
     onchange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-    
+
         // עדכון ה-state עבור השדה שהשתנה
         const newState = { [e.target.name]: e.target.value } as unknown as Pick<ModalExtStates, keyof ModalExtStates>;
-    
+
         // בדיקת ולידציה עבור NewFolderName
         if (name === "NewFolderName") {
             const hasInvalidChars = this.validateFolderName(value);
             newState.NewFolderNameValidate = hasInvalidChars; // true אם יש תווים לא חוקיים
         }
-    
+
         this.setState(newState);
     };
-    validateFolderName = (value:any) => {
+    validateFolderName = (value: any) => {
         const invalidChars = /[\\/:*?"<>|]/; // תווים שאינם חוקיים
         return invalidChars.test(value);
-      };
+    };
 
     public render(): React.ReactElement<ModalExtProps> {
         return (
@@ -174,9 +192,9 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                     <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
                         <div style={{ display: "flex", justifyContent: "center", flexDirection: "column" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
                             <div className="modal-header" >
-                                <h2  style={{margin:1}}>יצירת היררכית תיקיות</h2>
+                                <h2 style={{ margin: 1 }}>יצירת היררכית תיקיות</h2>
                             </div>
-                            <div  className="modal-body">
+                            <div className="modal-body">
                                 <Autocomplete
                                     id="country-select-demo"
                                     onChange={(event, newValue) => {
@@ -205,11 +223,11 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     name="NewFolderName"
                                     error={this.state.NewFolderNameValidate}
                                     helperText={
-                                      this.state.NewFolderNameValidate
-                                        ? "שם התיקייה אינו יכול לכלול תווים כמו \\ / : * ? \" < > |"
-                                        : ""
+                                        this.state.NewFolderNameValidate
+                                            ? "שם התיקייה אינו יכול לכלול תווים כמו \\ / : * ? \" < > |"
+                                            : ""
                                     }
-                                    
+
                                     onChange={this.onchange}
                                     value={this.state.NewFolderName}
                                     className="text-field"
@@ -220,9 +238,9 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     fullWidth
                                     style={{ marginTop: '16px' }}
                                 />
-                            <div style={{fontSize: 12, textAlign: "right", direction: "rtl",marginTop:7}}>
-    *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
-</div>
+                                <div style={{ fontSize: 12, textAlign: "right", direction: "rtl", marginTop: 7 }}>
+                                    *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
+                                </div>
                             </div>
                             <div className="modal-footer">
                                 <Button
@@ -236,21 +254,21 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                 <Button
                                     variant="outlined"
                                     style={{ borderColor: "red", color: "red" }}
-
+                                    disabled={this.state.isSave}
                                     onClick={this.closeModal}
                                 >
                                     ביטול
                                 </Button>
                             </div>
                             <div>
-                            {this.state.isSave &&
-                                <Box sx={{ display: 'flex', justifyContent:"center",margin:10 }}>
-                            <CircularProgress />
-                            </Box>
-                            }
+                                {this.state.isSave &&
+                                    <Box sx={{ display: 'flex', justifyContent: "center", margin: 10 }}>
+                                        <CircularProgress />
+                                    </Box>
+                                }
 
                             </div>
-                            
+
 
                         </div >
                     </div >
