@@ -12,6 +12,9 @@ export type SelectedFile = {
   libraryId: string;
   initiatorId: any;
   CheckoutUser: any[];
+  ServerRedirectedEmbedUrl: string;
+  serverurl:{progid: string};
+  UniqueId: string;
 };
 
 export type DocumentProps = {

@@ -26,5 +26,14 @@
       "type": "command"
       
     }
+    ,
+    "linkToCategory": {
+      "title": {
+        "default": "קישור לקטגוריה"
+      },
+      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "type": "command"
+      
+    }
   }
 }

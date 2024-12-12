@@ -22,7 +22,7 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
-
+import LinkToCategory, {LinkToCategoryProps} from "./components/LinkToCategory/LinkToCategory";
 const { solution } = require("../../../config/package-solution.json");
 
 export interface IListviewManagerCommandSetProperties {
@@ -117,9 +117,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       case "folderHierarchy":
         this._renderfolderHierarchytModal(finalPath, "Approval");
         break;
-      // case "Move_File":
-      //   this._renderMoveFileModal(selectedFiles);
-      //   break;
+      case "linkToCategory":
+        this._renderLinkToCategoryModal(selectedFiles);
+        break;
       // case "RenameFile":
       //   if (libraryName && libraryID) {
       //     this._renderRenameFileModal(selectedFiles[0], libraryName, libraryID);
@@ -196,9 +196,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 
-  private _renderMoveFileModal(selectedRows: any[]) {
+  private _renderLinkToCategoryModal(selectedRows: any[]) {
     const element: React.ReactElement<MoveFileProps> = React.createElement(
-      MoveFile,
+      LinkToCategory,
       {
         sp: this.sp,
         context: this.context,
@@ -271,11 +271,15 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     let LibraryName = this.context.pageContext.list.title;
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
+    const compareThreeCommand: Command = this.tryGetCommand("linkToCategory");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+    }
+
+    if(compareThreeCommand){
+      compareThreeCommand.visible = event.selectedRows?.length === 1;
     }
 
     // if (compareThreeCommand) {
