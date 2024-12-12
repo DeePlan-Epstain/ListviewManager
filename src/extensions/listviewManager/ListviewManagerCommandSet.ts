@@ -130,6 +130,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
   private startDnDBlock() {
+    if (this.currUser.Email === 'EpsteinSystem@epstein.co.il') return;
     const dropZoneArea = document.querySelectorAll("[role=presentation]");
     const testArr: Element[] = [];
 
