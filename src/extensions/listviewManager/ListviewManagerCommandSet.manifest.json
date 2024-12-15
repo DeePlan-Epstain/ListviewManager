@@ -25,6 +25,14 @@
       "iconImageUrl": "./assets/imgs/AddBtn.png",
       "type": "command"
       
+    },
+    "convertToPDF": {
+      "position": 3,
+      "title": {
+        "default": "המרה ל-PDF"
+      },
+      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "type": "command"
     }
   }
 }
