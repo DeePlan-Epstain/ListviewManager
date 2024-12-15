@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import modalStyles from "../../styles/modalStyles.module.scss";
 import styles from "./ApproveDocument.module.scss";
-import { SPFI } from "@pnp/sp";
+import { spfi, SPFI, SPFx } from "@pnp/sp";
 import { TextField, Button, FormControlLabel, Checkbox } from "@mui/material";
 import {
   PeoplePicker,
@@ -43,6 +43,8 @@ export default function ReviewDocument({
   const [loadingProps, setLoadingProps] = useState<{
     loading: boolean;
     msg: string;
+
+
   }>({
     loading: false,
     msg: "",
@@ -107,11 +109,14 @@ export default function ReviewDocument({
 
   const onConfirm = async (): Promise<void> => {
     try {
+      const spPortal= spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(context))
+      
+
       // Resolve user IDs for all approvers
       const approvesIdPromises = selectedFile.latestApprovers.map(
         async (approver: any) => {
           try {
-            const user = await sp.web.ensureUser(approver.loginName);
+            const user = await spPortal.web.ensureUser(approver.loginName);
             return user.data.Id;
           } catch (error) {
             console.log(
@@ -129,8 +134,13 @@ export default function ReviewDocument({
         setErrorMsg("אנא בחר לפחות מאשר אחד");
         return;
       } else {
+    const spPortal= spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(context))
+    const currUser = await spPortal.web.currentUser();
+    const fullUrl = context.pageContext.web.absoluteUrl; // כתובת האתר המלאה
+    const baseUrl = fullUrl.split("/").slice(0, 5).join("/"); // חיתוך החלק הרצוי
+
         // Add item to the SharePoint list with resolved user IDs
-        await sp.web.lists
+        await spPortal.web.lists
           .getById("968d78ad-3e30-4657-baf7-8ef5f5c6c40f")
           .items.add({
             Title: currUser.Title,
@@ -145,6 +155,8 @@ export default function ReviewDocument({
             ApproveStatus: selectedFile.approveStatus,
             InitiatorId: currUser.Id,
             DocServerRelativeUrl: selectedFile.ServerRelativeUrl,
+            baseUrl:baseUrl
+            
           });
 
         // Optionally, you can add a message to indicate successful addition
@@ -414,8 +426,7 @@ export default function ReviewDocument({
               {isAskCancelRunningFlow && (
                 <div className={modalStyles.modalDialogContainer}>
                   <span>
-                    There is an active approvals flow on this document, do you
-                    want to cancel it?
+                   יש תהליך אישור פעיל על מסמך זה. האם ברצונך לבטל אותו?
                   </span>
                   <div className={modalStyles.modalDialogActions}>
                     <Button color="warning" onClick={cancelRunningFlow}>

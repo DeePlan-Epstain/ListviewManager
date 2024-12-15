@@ -38,8 +38,6 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
             FolderHierarchyValidate: false,
             NewFolderName: "",
             NewFolderNameValidate: false,
-
-
         }
     }
 
