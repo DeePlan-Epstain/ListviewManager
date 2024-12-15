@@ -22,6 +22,8 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
+import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
+
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -36,6 +38,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private sp: SPFI;
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
+  private typeSet: Set<string>;
 
   private allowedUsers: string[] = [
     "EpsteinSystem@Epstein.co.il",
@@ -46,8 +49,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
-    console.log("this.isAllowedToMoveFile",this.isAllowedToMoveFile);
-    
+    console.log("this.isAllowedToMoveFile", this.isAllowedToMoveFile);
+
 
     this.currUser = await this.sp.web.currentUser();
     if (!this.allowedUsers.includes(this.currUser.Email.toLocaleLowerCase())) {
@@ -59,10 +62,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
     compareOneCommand.visible = false;
-     const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-     if(this.isAllowedToMoveFile === false){
-       compareTwoCommand.visible = false;
-      }
+    const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+    if (this.isAllowedToMoveFile === false) {
+      compareTwoCommand.visible = false;
+    }
+    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
+    compareFiveCommand.visible = false;
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // compareThreeCommand.visible = false;
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
@@ -72,6 +77,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
     }
+    this.typeSet = await getConvertibleTypes(this.context);  
 
     return Promise.resolve();
   }
@@ -82,14 +88,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const fullUrl = window.location.href;
     console.log(fullUrl);
-    
+
     // Extract the "id" parameter from the query string
     const urlParams = new URLSearchParams(fullUrl.split('?')[1]);
     const folderPath = urlParams.get('id');
-  
+
     // If "id" exists, decode it to get the relative path
     let finalPath = folderPath ? decodeURIComponent(folderPath) : null;
-  
+
     if (finalPath) {
       console.log("Final Server Relative URL:", finalPath);
     } else {
@@ -97,8 +103,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       finalPath = fullUrl.split('/Forms')[0] // Assuming "Forms" is in the URL structure
     }
     console.log(finalPath);
-    
-  
+
+
     const selectedFiles = event.selectedRows.map((SR: any) => {
       const keys = SR._values.keys();
       const row: any = {};
@@ -116,6 +122,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         break;
       case "folderHierarchy":
         this._renderfolderHierarchytModal(finalPath, "Approval");
+        break;
+      case "convertToPDF":
+        ConvertToPdf(this.context, selectedFiles[0])
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -162,8 +171,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   extractLibraryDetails = async (
     fileRef: string
   ): Promise<{ libraryName: string; libraryID: string }> => {
-   console.log(fileRef);
-   
+    console.log(fileRef);
+
     const parts = fileRef.split("/");
     const libraryUrlPart = parts.length > 2 ? parts[3] : "";
 
@@ -229,10 +238,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   //   ReactDom.render(element, this.dialogContainer);
   // }
 
-  private _renderApproveDocumentModal(
-    selectedRow: any,
-    modalInterface: "Review" | "Approval"
-  ) {
+  private _renderApproveDocumentModal(selectedRow: any, modalInterface: "Review" | "Approval") {
     const element: React.ReactElement<ApproveDocumentProps> =
       React.createElement(ApproveDocument, {
         sp: this.sp,
@@ -246,10 +252,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  private _renderfolderHierarchytModal(
-    finalPath: any,
-    modalInterface: "Review" | "Approval"
-  ) {
+  private _renderfolderHierarchytModal(finalPath: any, modalInterface: "Review" | "Approval") {
     const element: React.ReactElement<ModalExtProps> =
       React.createElement(ModalExt, {
         sp: this.sp,
@@ -273,9 +276,18 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
+    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
+
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+    }
+
+    // if there is only one selected item and its a file and its a file type that can be converted to pdf
+    if (compareFiveCommand) {
+      compareFiveCommand.visible = event.selectedRows?.length === 1 && 
+      event.selectedRows[0]?.getValueByName('FSObjType') == 0 && 
+      this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));
     }
 
     // if (compareThreeCommand) {
