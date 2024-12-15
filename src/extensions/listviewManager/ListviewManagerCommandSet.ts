@@ -38,7 +38,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private isAllowedToMoveFile: boolean = false;
 
   private allowedUsers: string[] = [
-    // "EpsteinSystem@Epstein.co.il",
+    "EpsteinSystem@Epstein.co.il",
   ].map((e) => e.toLocaleLowerCase());
 
   public async onInit(): Promise<void> {
