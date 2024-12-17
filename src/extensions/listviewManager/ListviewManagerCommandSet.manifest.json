@@ -15,8 +15,7 @@
       },
       "iconImageUrl": "../listviewManager/assets/imgs/approvalDocumentIcon.svg",
       "type": "command"
-    } 
-    ,
+    },
     "folderHierarchy": {
       "position": 2,
       "title": {
@@ -24,7 +23,6 @@
       },
       "iconImageUrl": "./assets/imgs/AddBtn.png",
       "type": "command"
-      
     },
     "convertToPDF": {
       "position": 3,
@@ -32,6 +30,13 @@
         "default": "המרה ל-PDF"
       },
       "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "type": "command"
+    },
+    "External_Sharing": {
+      "title": {
+        "default": "שיתוף קובץ במייל"
+      },
+      "iconImageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAcCAYAAAB/E6/TAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAALBSURBVHgB1VZLUttAEO0eiWyjRfZxCpxiFycXiDlAMN5mg4idNdzA9gmAPR9nlaUwOQDmAimt+RS+QCpmGzzTeT22iACTCpY36SrVSGrNvO6e96bFNCdbaiZVpqCF2wquCFefHH05P1jtqj+gOdjr5jcAcJcEAIaOhGnAIstkOH7x7iP9+P71lKmgLcdJyYbBFZGkNyO3MujWh5mv3Oh1iXldyK4YKmg28OUigNTzIP6ddVsYhlrSwkCIuCLYD4AM7rs8sEgPt5XiQOIiQ3L9mNshIwxRYSAhkwrx+1KcRNP8xnBNM56ZDDk6Vyev+jcje2efys3jbQxbSGvjyUATlh16AKEhqNxBXhETtwi0xqJ9vAMBKMY3kZB0LvZq7fAW/VMSkwnWKRdhXnBammdhuGlJ2mMA6Yys28kywPyBYD4zxRq9LxfmXxzU/HyfkQpOJgt4wSESdlIBo0qItI3JQyfw+wipPxrZjWks+5vxJJNDLLR7uV/byhyawUIYJFmGCgDVoAz1Ps1gjA07wSql8/3VV/edE7ArJjk926utUQFTelcdeVE9MK2/CGNz+Q0VNAUaguvPH/uAWSKoe0gFTYFSlG5tmuCUyuT3iIsDObG7GKOFINjOOxTYLoTJ5LFa/nx8tdhIZt4nT++lZq99KzjPLlKa6aJecOzcgNi0lO54372xtvNkemc3SnMvuD+KT/N01jKOQhP7gMaB3AF82GElJce7meBnO4IC09aG5itgqcOGX+YF75xcY/NrmeDP9j50Zj5Uy3FSocAkvpwasdDRL+tPjFviLDZ6O4Z5EzyoF27lXvAoF07ut9P2Df6fGNLijY9Yz7/0UXL8dx0WdvovHbZ4K2fXJRV8aE5K45PEmwKXG8eHemBrXypMBrW84LEg/iFQrpzgtcPOBWgMllTx49viXP8SHG+X+/Ujff4NY6lmmklb5pYAAAAASUVORK5CYII=",
       "type": "command"
     }
   }

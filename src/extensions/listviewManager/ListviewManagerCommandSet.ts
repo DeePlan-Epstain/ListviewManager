@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDom from "react-dom";
 import { Log } from "@microsoft/sp-core-library";
-import getSP from "../../pnpjs-config";
+import { getSP, getGraph } from "../../pnpjs-config";
 import {
   BaseListViewCommandSet,
   Command,
@@ -23,7 +23,9 @@ import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
-
+import { GraphFI } from "@pnp/graph";
+import SendDocumentService from "./service/sendDocument.service";
+import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -36,6 +38,7 @@ const LOG_SOURCE: string = "ListviewManagerCommandSet";
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
+  private graph: GraphFI;
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
   private typeSet: Set<string>;
@@ -48,6 +51,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     console.log(solution.name + ":", solution.version);
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
+    this.graph = getGraph(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
     console.log("this.isAllowedToMoveFile", this.isAllowedToMoveFile);
 
@@ -73,18 +77,20 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     // compareFourCommand.visible = false;
 
+    // File sharing by email
+    const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    externalSharingCompareOneCommand.visible = false;
+
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
     }
-    this.typeSet = await getConvertibleTypes(this.context);  
+    this.typeSet = await getConvertibleTypes(this.context);
 
     return Promise.resolve();
   }
 
-  public async onExecute(
-    event: IListViewCommandSetExecuteEventParameters
-  ): Promise<void> {
+  public async onExecute(event: IListViewCommandSetExecuteEventParameters): Promise<void> {
 
     const fullUrl = window.location.href;
     console.log(fullUrl);
@@ -125,6 +131,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         break;
       case "convertToPDF":
         ConvertToPdf(this.context, selectedFiles[0])
+        break;
+      case "External_Sharing":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.processSelectedRowsAndContacts(Array.from(event.selectedRows));
+        }
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -168,6 +181,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       }
     }
   }
+
   extractLibraryDetails = async (
     fileRef: string
   ): Promise<{ libraryName: string; libraryID: string }> => {
@@ -266,9 +280,53 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  public async onListViewUpdated(
-    event: IListViewCommandSetListViewUpdatedParameters
-  ): Promise<void> {
+  private async processSelectedRowsAndContacts(selectedRows: any[]): Promise<void> {
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+    // Retrieve user contacts
+    const contact = await this.graph.me.contacts();
+    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+
+    // Update SendDocumentService properties
+    SendDocumentService.EmailAddress = emails;
+    SendDocumentService.fileNames = fileNames;
+    SendDocumentService.fileUris = fileRefs;
+    SendDocumentService.DocumentIdUrls = documentIdUrls;
+    SendDocumentService.webUri = this.context.pageContext.web.absoluteUrl;
+    SendDocumentService.context = this.context;
+
+    // Set MS Graph client factory
+    if (this.context && this.context.msGraphClientFactory) {
+      SendDocumentService.msGraphClientFactory = this.context.msGraphClientFactory;
+    } else {
+      console.error("MSGraphClientFactory is undefined.");
+      return;
+    }
+
+    // Set server relative URL
+    const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
+    SendDocumentService.ServerRelativeUrl = currentRelativeUrl;
+
+    // Create and display the email dialog
+    const dialog: SendEMailDialog = new SendEMailDialog(SendDocumentService);
+    await dialog.show();
+  }
+
+  public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
     let LibraryName = this.context.pageContext.list.title;
@@ -277,6 +335,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
+    const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
 
 
     if (compareOneCommand) {
@@ -285,9 +344,17 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     // if there is only one selected item and its a file and its a file type that can be converted to pdf
     if (compareFiveCommand) {
-      compareFiveCommand.visible = event.selectedRows?.length === 1 && 
-      event.selectedRows[0]?.getValueByName('FSObjType') == 0 && 
-      this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));
+      compareFiveCommand.visible = event.selectedRows?.length === 1 &&
+        event.selectedRows[0]?.getValueByName('FSObjType') == 0 &&
+        this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));
+    }
+
+    // if there is one selected item or more and its a file
+    if (externalSharingCompareOneCommand) {
+      if (event.selectedRows?.length > 0) {
+        const fileExt = event.selectedRows[0].getValueByName(".fileType")
+        if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+      } else externalSharingCompareOneCommand.visible = false;
     }
 
     // if (compareThreeCommand) {
