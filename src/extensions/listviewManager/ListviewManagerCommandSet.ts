@@ -24,6 +24,8 @@ import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { exportToZip } from "./service/zip.service";
+import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
+import JSZip from "jszip";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -125,7 +127,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         ConvertToPdf(this.context, selectedFiles[0]);
         break;
       case "ExportToZip":
-        exportToZip(selectedFiles, this.context);
+        this._renderExportZipModal(selectedFiles);
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -262,6 +264,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         modalInterface,
         currUser: this.currUser,
         unMountDialog: this._closeDialogContainer,
+      });
+
+    ReactDom.render(element, this.dialogContainer);
+  }
+
+  private _renderExportZipModal(selectedFiles: SelectedFile[]) {
+    const element: React.ReactElement<ModalExtProps> =
+      React.createElement(ExportZipModal, {
+        sp: this.sp,
+        context: this.context,
+        selectedItems: selectedFiles,
+        unMountDialog: this._closeDialogContainer,
+        status: true
       });
 
     ReactDom.render(element, this.dialogContainer);
