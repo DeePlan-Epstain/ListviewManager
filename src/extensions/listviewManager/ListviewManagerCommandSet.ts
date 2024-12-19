@@ -23,7 +23,7 @@ import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
-
+import { exportToZip } from "./service/zip.service";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -49,8 +49,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
-    console.log("this.isAllowedToMoveFile", this.isAllowedToMoveFile);
-
 
     this.currUser = await this.sp.web.currentUser();
     if (!this.allowedUsers.includes(this.currUser.Email.toLocaleLowerCase())) {
@@ -124,7 +122,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         this._renderfolderHierarchytModal(finalPath, "Approval");
         break;
       case "convertToPDF":
-        ConvertToPdf(this.context, selectedFiles[0])
+        ConvertToPdf(this.context, selectedFiles[0]);
+        break;
+      case "ExportToZip":
+        exportToZip(selectedFiles, this.context);
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -277,7 +278,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
-
+    const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -288,6 +289,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       compareFiveCommand.visible = event.selectedRows?.length === 1 && 
       event.selectedRows[0]?.getValueByName('FSObjType') == 0 && 
       this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));
+    }
+
+    if(compareSixCommand){
+      compareSixCommand.visible = event.selectedRows?.length >= 1;
     }
 
     // if (compareThreeCommand) {

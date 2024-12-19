@@ -10,7 +10,7 @@ import { spfi, SPFI, SPFx } from "@pnp/sp";
 
 var _sp: any = null;
 
-const getSP = (context: any): SPFI => {
+const getSP = (context?: any): SPFI => {
   _sp = spfi().using(SPFx(context));
   return _sp;
 };

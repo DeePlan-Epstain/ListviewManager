@@ -26,3 +26,8 @@ export type DocumentProps = {
   Initiator: number;
   ServerRelativeUrl: string;
 };
+
+export type File = {
+  FileRef: string;
+  FileLeafRef: string;
+}
