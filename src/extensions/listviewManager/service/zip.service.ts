@@ -8,6 +8,7 @@ import "@pnp/sp/folders";
 import { folderFromServerRelativePath } from "@pnp/sp/folders";
 import { IFileInfo } from '@pnp/sp/files';
 import "@pnp/sp/webs";
+import "@pnp/sp/batching";
 
 
 const DELAY_TIME = 5000;
@@ -69,17 +70,25 @@ function getFolderPath(selectedFile: SelectedFile | File, rootFolderName: string
 // This function get a selected item and add its content to the new zip archive
 async function handleFile(rootFolder: string, archive: JSZip, selectedFile: File, sp: SPFI){
     try{
-        if (!sp || !selectedFile.FileRef) {
-            console.error("Invalid SP object or FileRef in handleFile.");
-            return;
-        }
         const fileContent = await sp.web.getFileByServerRelativePath(selectedFile.FileRef).getBuffer();
         delayIfNeeded();
         const filePath = getFolderPath(selectedFile, rootFolder);
         if(filePath){
-            archive.file(filePath, fileContent);
-            console.log("archive:", archive);
-            
+            archive.file(filePath, fileContent);            
+        }
+    } catch(error){
+        console.error(`Error downloading file: ${selectedFile.FileRef} error: `, error)
+    }
+}
+
+// This function get a selected item and add its content to the new zip archive
+function handleFileBatched(rootFolder: string, archive: JSZip, selectedFile: File, sp: SPFI, fileContent: ArrayBuffer){
+    try{
+        // const fileContent = await sp.web.getFileByServerRelativePath(selectedFile.FileRef).getBuffer();
+        // delayIfNeeded();
+        const filePath = getFolderPath(selectedFile, rootFolder);
+        if(filePath){
+            archive.file(filePath, fileContent);            
         }
     } catch(error){
         console.error(`Error downloading file: ${selectedFile.FileRef} error: `, error)
@@ -91,15 +100,34 @@ async function handleFolder(rootFolder: string, archive: JSZip, selectedFile: Fi
         const folder = archive.folder(getFolderPath(selectedFile, rootFolder));
         const selectedFolder = folderFromServerRelativePath(sp.web, selectedFile.FileRef);
         const folderInfo = await selectedFolder();
+        let batchcounter = 0;
         delayIfNeeded()
         const files: IFileInfo[] = await selectedFolder.files();
         delayIfNeeded()
         const folders = await selectedFolder.folders();
         delayIfNeeded()
+        let [batchedWeb, execute] = sp.web.batched();
+        let res: ArrayBuffer[] = [];
         //handle files within the folder
         for(const file of files){
-            await handleFile(rootFolder, archive, { FileRef: file.ServerRelativeUrl, FileLeafRef: file.Name}, sp)
+            batchedWeb.getFileByServerRelativePath(file.ServerRelativeUrl).getBuffer().then(content => res.push(content));
+            batchcounter++;
+            if(batchcounter % 100 === 0){
+                await execute();
+                delayIfNeeded()
+                batchcounter = 0;
+                [batchedWeb, execute] = sp.web.batched();
+            }
+            // await handleFile(rootFolder, archive, { FileRef: file.ServerRelativeUrl, FileLeafRef: file.Name}, sp)
         }
+        if(batchcounter > 0){
+            await execute();
+            delayIfNeeded()
+        }
+        delayIfNeeded();
+        files.forEach(async (file, index) =>{
+            handleFileBatched(rootFolder, archive, { FileRef: files[index].ServerRelativeUrl, FileLeafRef: files[index].Name}, sp, res[index])
+        })
         //handle sub folders
         for(const subfolder of folders){
             await handleFolder(rootFolder, archive, { FileRef: subfolder.ServerRelativeUrl, FileLeafRef: subfolder.Name}, sp)

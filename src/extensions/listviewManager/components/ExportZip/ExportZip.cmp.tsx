@@ -72,21 +72,24 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
                                 variant="contained"
                                 color="primary"
                                 onClick={async () => this.download()}
-                                sx={{ fontFamily: font }}>
+                                sx={{ fontFamily: font }}
+                                className={`${styles.button} ${styles.downloadButton}`}>
                                 הורדה למחשב
                             </Button>
                             <Button
                                 variant="contained"
                                 color="error"
                                 onClick={this.props.unMountDialog}
-                                sx={{ fontFamily: font }}>
+                                sx={{ fontFamily: font }}
+                                className={`${styles.button} ${styles.cancelButton}`}>
                                 ביטול
                             </Button>
                             <Button
                                 variant="contained"
                                 style={{ backgroundColor: "#84C792" }}
                                 onClick={() => this.saveToSharepoint()}
-                                sx={{ fontFamily: font }}>
+                                sx={{ fontFamily: font }}
+                                className={`${styles.button} ${styles.saveButton}`}>
                                 שמירה ב-Sharepoint
                             </Button>
                         </Box>
