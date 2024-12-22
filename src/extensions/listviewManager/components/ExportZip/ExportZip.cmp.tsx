@@ -8,6 +8,7 @@ import { ExportZipModalProps } from './ExportZipProps';
 import { ExportZipModalState } from './ExportZipState';
 import { downloadToPC, exportToZip, saveZipToSharePoint } from '../../service/zip.service';
 import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
+import Swal from 'sweetalert2';
 
 const style = {
     position: 'absolute',
@@ -38,12 +39,22 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
 
     private download = async () => {
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
+        Swal.fire({
+            title: "יצירת הקובץ בוצעה בהצלחה",
+            text:"ההורדה תחל בשניות הקרובות",
+            icon: "success",
+          });
         downloadToPC(archive);
         this.props.unMountDialog();
     }
 
     private saveToSharepoint = async () => {
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
+        Swal.fire({
+            title: "יצירת הקובץ בוצעה בהצלחה",
+            text:"ההורדה תחל בשניות הקרובות",
+            icon: "success",
+          });
         saveZipToSharePoint(archive, this.props.selectedItems, this.props.sp);
         this.props.unMountDialog();
     }
@@ -66,6 +77,14 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
                             align='center'
                             fontFamily={font}>
                             איפה תרצה לשמור את הקובץ?
+                        </Typography>
+                        <Typography
+                            id="modal-modal-title"
+                            variant='h6'
+                            component="h2"
+                            align='center'
+                            fontFamily={font}>
+                            פעולה זו עשויה לקחת זמן, בסיום היצירה תופיע התראה.
                         </Typography>
                         <Box sx={buttonContainerStyle}>
                             <Button

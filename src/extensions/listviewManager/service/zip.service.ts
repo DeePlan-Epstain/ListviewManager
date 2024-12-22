@@ -33,8 +33,8 @@ async function delayIfNeeded(){
 
 // main function that trigger the recursive calls
 export async function exportToZip(selectedItems: SelectedFile[], context: ListViewCommandSetContext ){
+    console.time("exportToZip")
     console.log("context: ", context);
-    
     const archive = new JSZip();
     console.log(selectedItems);
     const rootFolderName = getRootFolder(selectedItems[0]);
@@ -48,6 +48,7 @@ export async function exportToZip(selectedItems: SelectedFile[], context: ListVi
             await handleFile(rootFolderName, archive, item, sp);
         }
     }
+    console.timeEnd("exportToZip")
     return archive;
 }
 
@@ -97,15 +98,12 @@ function handleFileBatched(rootFolder: string, archive: JSZip, selectedFile: Fil
 
 async function handleFolder(rootFolder: string, archive: JSZip, selectedFile: File, sp: SPFI){
     try{
-        const folder = archive.folder(getFolderPath(selectedFile, rootFolder));
+        archive.folder(getFolderPath(selectedFile, rootFolder));
         const selectedFolder = folderFromServerRelativePath(sp.web, selectedFile.FileRef);
-        const folderInfo = await selectedFolder();
+        // const folderInfo = await selectedFolder();
         let batchcounter = 0;
-        delayIfNeeded()
         const files: IFileInfo[] = await selectedFolder.files();
-        delayIfNeeded()
         const folders = await selectedFolder.folders();
-        delayIfNeeded()
         let [batchedWeb, execute] = sp.web.batched();
         let res: ArrayBuffer[] = [];
         //handle files within the folder
@@ -114,17 +112,10 @@ async function handleFolder(rootFolder: string, archive: JSZip, selectedFile: Fi
             batchcounter++;
             if(batchcounter % 100 === 0){
                 await execute();
-                delayIfNeeded()
                 batchcounter = 0;
                 [batchedWeb, execute] = sp.web.batched();
             }
-            // await handleFile(rootFolder, archive, { FileRef: file.ServerRelativeUrl, FileLeafRef: file.Name}, sp)
         }
-        if(batchcounter > 0){
-            await execute();
-            delayIfNeeded()
-        }
-        delayIfNeeded();
         files.forEach(async (file, index) =>{
             handleFileBatched(rootFolder, archive, { FileRef: files[index].ServerRelativeUrl, FileLeafRef: files[index].Name}, sp, res[index])
         })
@@ -152,21 +143,12 @@ export async function downloadToPC(archive:JSZip) {
 export async function saveZipToSharePoint(archive: JSZip, selectedItems: SelectedFile[], sp: SPFI) {
     try {
         const rootFolderName = getRootFolder(selectedItems[0]);
-
-        // Generate the zip file as a Blob
         const zipBlob = await archive.generateAsync({ type: "blob" });
-
-        // Determine the target folder where the zip file will be saved
         const folderPath = selectedItems[0].FileRef.substring(0, selectedItems[0].FileRef.lastIndexOf('/'));
-
-        // Name the zip file
         const zipFileName = `${rootFolderName}_ExportedFiles.zip`;
-
-        console.log("begin uploading the zip file");
-        
+        console.log("begin uploading the zip file");       
         // Upload the zip file to SharePoint
         await sp.web.getFolderByServerRelativePath(folderPath).files.addChunked(zipFileName, zipBlob);
-
         console.log(`Zip file successfully uploaded to SharePoint folder: ${folderPath}`);
     } catch (error) {
         console.error("Error saving zip file to SharePoint:", error);
