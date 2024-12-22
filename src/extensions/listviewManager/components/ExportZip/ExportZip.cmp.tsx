@@ -38,6 +38,7 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
     }
 
     private download = async () => {
+        this.props.unMountDialog();
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
         Swal.fire({
             title: "יצירת הקובץ בוצעה בהצלחה",
@@ -45,10 +46,10 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
             icon: "success",
           });
         downloadToPC(archive);
-        this.props.unMountDialog();
     }
 
     private saveToSharepoint = async () => {
+        this.props.unMountDialog();
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
         Swal.fire({
             title: "יצירת הקובץ בוצעה בהצלחה",
@@ -56,7 +57,6 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
             icon: "success",
           });
         saveZipToSharePoint(archive, this.props.selectedItems, this.props.sp);
-        this.props.unMountDialog();
     }
 
     public render(): React.ReactElement<ExportZipModalProps> {
