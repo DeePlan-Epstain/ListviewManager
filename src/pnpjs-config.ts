@@ -4,7 +4,9 @@ import "@pnp/sp/items";
 import "@pnp/sp/sites";
 import "@pnp/sp/files";
 import "@pnp/sp/fields";
+import "@pnp/sp/batching";
 import "@pnp/sp/site-users/web";
+import "@pnp/sp/folders";
 import "@pnp/sp/items/get-all";
 import { spfi, SPFI, SPFx } from "@pnp/sp";
 
