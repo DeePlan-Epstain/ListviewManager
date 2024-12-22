@@ -138,7 +138,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // Check if the user selected some items
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
-          await this.processSelectedRowsAndContacts(Array.from(event.selectedRows));
+          await this.selectedRowsToShareDocumets(Array.from(event.selectedRows));
         }
         break;
       // case "Move_File":
@@ -295,7 +295,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  private async processSelectedRowsAndContacts(selectedRows: any[]): Promise<void> {
+  private async selectedRowsToShareDocumets(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
@@ -373,7 +373,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       } else externalSharingCompareOneCommand.visible = false;
     }
 
-    if(compareSixCommand){
+    if (compareSixCommand) {
       compareSixCommand.visible = event.selectedRows?.length >= 1;
     }
 
