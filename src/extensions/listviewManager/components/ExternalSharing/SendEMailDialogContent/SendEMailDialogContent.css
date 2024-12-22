@@ -1,0 +1,145 @@
+@import url("https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap");
+
+.top-spacer {
+  padding: 6px;
+}
+
+#modal-title {
+  display: flex;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+@media screen and (min-width: 1281px) {
+  div.DialogContentModal {
+    font-family: "Heebo", sans-serif !important;
+    min-width: 26vw;
+  }
+
+  div.DialogContentModal div.ms-Dialog-header div.ms-Dialog-title {
+    font-weight: bold !important;
+    display: flex;
+    justify-content: center;
+  }
+
+  .SendDocumentContainer div.ms-TextField div.ms-TextField-wrapper label {
+    width: 26vw;
+    font-size: 0.83vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup {
+    width: 26vw;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup
+    input {
+    font-size: 0.83vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup {
+    border-color: gray !important;
+    border-radius: 0.3vw;
+    margin-bottom: 0.3vw;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup
+    textarea {
+    font-size: 0.83vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  div.SendDocumentFooter div.ms-Dialog-actionsRight {
+    text-align: center !important;
+  }
+
+  div.SendDocumentFooter div.ms-Dialog-actionsRight span button {
+    border-radius: 5vw;
+    font-size: 0.83vw;
+  }
+
+  div.MessageBarAlert {
+    margin-bottom: 0.5vw;
+    width: 26vw;
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  div.DialogContentModal {
+    font-family: "Heebo", sans-serif !important;
+    min-width: 26vw;
+  }
+
+  div.DialogContentModal div.ms-Dialog-header div.ms-Dialog-title {
+    font-family: "Heebo", sans-serif !important;
+    font-weight: bold !important;
+    font-size: 1.6vw !important;
+  }
+
+  .SendDocumentContainer div.ms-TextField div.ms-TextField-wrapper label {
+    width: 26vw;
+    font-size: 1.1vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup {
+    width: 26vw;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup
+    input {
+    font-size: 1.1vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup {
+    border-color: gray !important;
+    border-radius: 0.3vw;
+    margin-bottom: 0.3vw;
+  }
+
+  .SendDocumentContainer
+    div.ms-TextField
+    div.ms-TextField-wrapper
+    div.ms-TextField-fieldGroup
+    textarea {
+    font-size: 1.1vw;
+    font-family: "Heebo", sans-serif !important;
+  }
+
+  div.SendDocumentFooter div.ms-Dialog-actionsRight {
+    text-align: center !important;
+  }
+
+  div.SendDocumentFooter div.ms-Dialog-actionsRight span button {
+    border-radius: 5vw;
+    font-size: 1.1vw;
+  }
+
+  div.MessageBarAlert {
+    margin-bottom: 0.5vw;
+    width: 60vh;
+  }
+}

@@ -20,6 +20,7 @@
     "@microsoft/sp-core-library": "1.16.0",
     "@microsoft/sp-dialog": "1.16.0",
     "@microsoft/sp-listview-extensibility": "1.16.0",
+    "@mui/icons-material": "^6.2.0",
     "@mui/material": "^5.15.12",
     "@pnp/graph": "^3.23.0",
     "@pnp/sp": "^3.23.0",
