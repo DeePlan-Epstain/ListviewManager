@@ -30,6 +30,7 @@
     "jss-rtl": "^0.3.0",
     "jszip": "^3.10.1",
     "react-beautiful-dnd": "^13.1.1",
+    "stylis-plugin-rtl": "^2.1.1",
     "sweetalert2": "^11.15.3",
     "tslib": "2.3.1"
   },
