@@ -277,7 +277,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         }
     }
 
-    public render(): JSX.Element {
+    public render(): React.ReactElement<ISendEMailDialogContentProps> {
 
         return (
             <CacheProvider value={cacheRtl}>

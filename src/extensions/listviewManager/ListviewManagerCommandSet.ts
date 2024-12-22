@@ -27,6 +27,7 @@ import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
 import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
+import { navigateToFavorites } from "./service/favorites.service";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -140,6 +141,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToShareDocumets(Array.from(event.selectedRows));
         }
+        break;
+      case "favorites":
+        navigateToFavorites(this.context);
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -352,6 +356,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    const compareSevenCommand: Command = this.tryGetCommand("favorites");
 
 
     if (compareOneCommand) {
@@ -375,6 +380,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     if (compareSixCommand) {
       compareSixCommand.visible = event.selectedRows?.length >= 1;
+    }
+
+    if (compareSevenCommand) {
+      compareSevenCommand.visible = event.selectedRows?.length === 0;
     }
 
     // if (compareThreeCommand) {
