@@ -26,6 +26,7 @@ import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
 import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
+import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -53,8 +54,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
-    console.log("this.isAllowedToMoveFile", this.isAllowedToMoveFile);
-
 
     this.currUser = await this.sp.web.currentUser();
     if (!this.allowedUsers.includes(this.currUser.Email.toLocaleLowerCase())) {
@@ -130,7 +129,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         this._renderfolderHierarchytModal(finalPath, "Approval");
         break;
       case "convertToPDF":
-        ConvertToPdf(this.context, selectedFiles[0])
+        ConvertToPdf(this.context, selectedFiles[0]);
+        break;
+      case "ExportToZip":
+        this._renderExportZipModal(selectedFiles);
         break;
       case "External_Sharing":
         // Check if the user selected some items
@@ -280,6 +282,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
+  private _renderExportZipModal(selectedFiles: SelectedFile[]) {
+    const element: React.ReactElement<ModalExtProps> =
+      React.createElement(ExportZipModal, {
+        sp: this.sp,
+        context: this.context,
+        selectedItems: selectedFiles,
+        unMountDialog: this._closeDialogContainer,
+        status: true
+      });
+
+    ReactDom.render(element, this.dialogContainer);
+  }
+
   private async processSelectedRowsAndContacts(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
@@ -335,6 +350,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
+    const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
 
 
@@ -355,6 +371,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         const fileExt = event.selectedRows[0].getValueByName(".fileType")
         if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
       } else externalSharingCompareOneCommand.visible = false;
+    }
+
+    if(compareSixCommand){
+      compareSixCommand.visible = event.selectedRows?.length >= 1;
     }
 
     // if (compareThreeCommand) {

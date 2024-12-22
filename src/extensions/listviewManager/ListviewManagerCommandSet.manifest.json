@@ -29,7 +29,15 @@
       "title": {
         "default": "המרה ל-PDF"
       },
-      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "iconImageUrl": "./assets/imgs/pdf.svg",
+      "type": "command"
+    },
+    "ExportToZip": {
+      "position": 3,
+      "title": {
+        "default": "ייצוא ל-ZIP"
+      },
+      "iconImageUrl": "./assets/imgs/zip.svg",
       "type": "command"
     },
     "External_Sharing": {

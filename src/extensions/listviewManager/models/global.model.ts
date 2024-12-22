@@ -27,6 +27,10 @@ export type DocumentProps = {
   ServerRelativeUrl: string;
 };
 
+export type File = {
+  FileRef: string;
+  FileLeafRef: string;
+}
 // Returns Email Attachment object
 export class EMailAttachment {
   public FileName: string;
