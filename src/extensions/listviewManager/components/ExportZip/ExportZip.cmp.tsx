@@ -9,6 +9,8 @@ import { ExportZipModalState } from './ExportZipState';
 import { downloadToPC, exportToZip, saveZipToSharePoint } from '../../service/zip.service';
 import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
 import Swal from 'sweetalert2';
+import modalStyles from "../../styles/modalStyles.module.scss";
+
 
 const style = {
     position: 'absolute',
@@ -19,13 +21,14 @@ const style = {
     bgcolor: 'background.paper',
     boxShadow: 24,
     p: 4,
+    borderRadius: '8px',
 };
 
 const buttonContainerStyle = {
     display: 'flex',
     gap: '3em',
     justifyContent: 'center',
-    paddingTop: '2em'
+    paddingTop: '1em'
 };
 
 
@@ -42,9 +45,9 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
         Swal.fire({
             title: "יצירת הקובץ בוצעה בהצלחה",
-            text:"ההורדה תחל בשניות הקרובות",
+            text: "ההורדה תחל בשניות הקרובות",
             icon: "success",
-          });
+        });
         downloadToPC(archive);
     }
 
@@ -53,14 +56,14 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
         Swal.fire({
             title: "יצירת הקובץ בוצעה בהצלחה",
-            text:"ההורדה תחל בשניות הקרובות",
+            text: "ההורדה תחל בשניות הקרובות",
             icon: "success",
-          });
+        });
         saveZipToSharePoint(archive, this.props.selectedItems, this.props.sp);
     }
 
     public render(): React.ReactElement<ExportZipModalProps> {
-        const font = 'Rubik';
+        const font = 'Tahoma';
         return (
             <div>
                 <Modal
@@ -72,46 +75,35 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
                     <Box sx={style}>
                         <Typography
                             id="modal-modal-title"
-                            variant="h6"
-                            component="h2"
                             align='center'
-                            fontFamily={font}>
+                            className={styles.modal_title}>
                             איפה תרצה לשמור את הקובץ?
                         </Typography>
                         <Typography
                             id="modal-modal-title"
-                            variant='h6'
-                            component="h2"
                             align='center'
-                            fontFamily={font}>
+                            className={styles.modal_text}>
                             פעולה זו עשויה לקחת זמן, בסיום היצירה תופיע התראה.
                         </Typography>
-                        <Box sx={buttonContainerStyle}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={async () => this.download()}
-                                sx={{ fontFamily: font }}
-                                className={`${styles.button} ${styles.downloadButton}`}>
-                                הורדה למחשב
-                            </Button>
-                            <Button
-                                variant="contained"
+                        <div className={modalStyles.modalFooter}>
+                        <Button
                                 color="error"
                                 onClick={this.props.unMountDialog}
-                                sx={{ fontFamily: font }}
-                                className={`${styles.button} ${styles.cancelButton}`}>
+                                className={`${styles.button}`}>
                                 ביטול
                             </Button>
                             <Button
-                                variant="contained"
-                                style={{ backgroundColor: "#84C792" }}
-                                onClick={() => this.saveToSharepoint()}
-                                sx={{ fontFamily: font }}
-                                className={`${styles.button} ${styles.saveButton}`}>
-                                שמירה ב-Sharepoint
+                                onClick={async () => this.download()}
+                                className={`${styles.button}`}>
+                                הורדה למחשב
                             </Button>
-                        </Box>
+                            <Button
+                                color='success'
+                                onClick={() => this.saveToSharepoint()}
+                                className={`${styles.button}`}>
+                                שמירה באתר
+                            </Button>
+                        </div>
                     </Box>
                 </Modal>
             </div>
