@@ -18,6 +18,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 import { ThemeProvider, StylesProvider } from "@material-ui/core/styles";
 import { jss } from "../../models/jss";
 import { theme } from "../../models/theme";
+import modalStyles from "../../styles/modalStyles.module.scss";
 
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -240,22 +241,20 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
                                 </div>
                             </div>
-                            <div className="modal-footer">
+                            <div className={modalStyles.modalFooter}>
                                 <Button
-                                    variant="contained"
-                                    style={{ backgroundColor: "green", color: "white" }}
+                                    disabled={this.state.isSave}
+                                    onClick={this.closeModal}
+                                    style={{ color: 'red' }}
+                                    >
+                                    ביטול
+                                </Button>
+                                <Button
+                                    style={{ color: '#1976d2' }}
                                     disabled={this.state.isSave}
                                     onClick={this.createFolder}
                                 >
                                     אישור
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    style={{ borderColor: "red", color: "red" }}
-                                    disabled={this.state.isSave}
-                                    onClick={this.closeModal}
-                                >
-                                    ביטול
                                 </Button>
                             </div>
                             <div>
@@ -266,8 +265,6 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                 }
 
                             </div>
-
-
                         </div >
                     </div >
                 </ThemeProvider>

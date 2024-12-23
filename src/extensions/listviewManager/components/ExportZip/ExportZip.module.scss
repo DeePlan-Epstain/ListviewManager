@@ -1,20 +1,14 @@
 .button{
     width: 100px;
+    font-family: "Segoe UI Regular WestEuropean Segoe UI Tahoma Arial sans-serif";
+}
+
+.modal_title{
+    font-family: "Segoe UI Regular WestEuropean Segoe UI Tahoma Arial sans-serif";
+    font-size: 14px !important;
     font-weight: 600 !important;
 }
-
-.saveButton{
-    background-color: green;
-    color: white;
+.modal_text{
+    font-family: "Segoe UI Regular WestEuropean Segoe UI Tahoma Arial sans-serif";
+    font-size: 14px !important;
 }
-
-.cancelButton{
-    background-color: red;
-    color: white;
-}
-
-.downloadButton{
-    background-color: darkslategray;
-    color: white;
-}
-
