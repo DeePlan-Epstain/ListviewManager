@@ -405,7 +405,7 @@ export default function ReviewDocument({
                     </Droppable>
                   </div>
 
-                  <div className={modalStyles.modalFooter}>
+                  <div className={`${modalStyles.modalFooter} ${modalStyles.modalFooterEnd}`}>
                     <Button
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={unMountDialog}

@@ -27,6 +27,7 @@ import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
 import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
+import Swal from 'sweetalert2';
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -130,6 +131,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         break;
       case "convertToPDF":
         ConvertToPdf(this.context, selectedFiles[0]);
+        Swal.fire({
+            title: "בקשתך נקלטה בהצלחה",
+            text: "המרת הקובץ תחל בשניות הקרובות",
+            icon: "success",
+        });
         break;
       case "ExportToZip":
         this._renderExportZipModal(selectedFiles);
