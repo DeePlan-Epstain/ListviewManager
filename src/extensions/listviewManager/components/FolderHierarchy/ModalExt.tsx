@@ -96,18 +96,18 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
                 const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
                 console.log("destinationUrl", destinationUrl);
-                
-                
-                
+
+
+
                 await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
-                
+
                 this.closeModal();
                 location.reload();
-                
-            }catch (e) {
+
+            } catch (e) {
                 console.log(e);
-                
-            this.setState({ isSave: false });
+
+                this.setState({ isSave: false });
 
             }
 
@@ -157,7 +157,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
             FolderHierarchyValidate: false,
             NewFolderName: "",
             NewFolderNameValidate: false,
-        },()=>{
+        }, () => {
             document.getElementById("modal-back2").className = "modal-back2"
             document.getElementById("modal-content2").className = "modal-content2"
         })
@@ -241,12 +241,12 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
                                 </div>
                             </div>
-                            <div className={modalStyles.modalFooter}>
+                            <div className={modalStyles.modalFooter} style={{ padding: "0 29%" }}>
                                 <Button
                                     disabled={this.state.isSave}
                                     onClick={this.closeModal}
                                     style={{ color: 'red' }}
-                                    >
+                                >
                                     ביטול
                                 </Button>
                                 <Button

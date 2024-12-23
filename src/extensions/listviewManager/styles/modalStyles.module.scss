@@ -1,72 +1,71 @@
 .modalScreen {
-    position: fixed;
-    top: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.4);
-    z-index: 12;
+  position: fixed;
+  top: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 12;
 }
 
 .modal {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    min-height: 280px;
-    padding: 1em;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow:
-        rgba(0, 0, 0, 0.22) 0px 25.6px 57.6px 0px,
-        rgba(0, 0, 0, 0.18) 0px 4.8px 14.4px 0px;
-    transition: 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  min-height: 280px;
+  padding: 1em;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.22) 0px 25.6px 57.6px 0px,
+    rgba(0, 0, 0, 0.18) 0px 4.8px 14.4px 0px;
+  transition: 0.2s;
 }
 
 .modalHeader {
-    width: 100%;
-    height: 23px;
-    span {
-        font-weight: 600;
-    }
+  width: 100%;
+  height: 23px;
+  span {
+    font-weight: 600;
+  }
 }
 
 .modalFooter {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    width: 100%;
-    height: 37px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 37px;
 }
 
 .modalDialogContainer {
-    // position: absolute;
-    // top: 35%;
-    // left: 4.2%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 1.5em;
-    height: 100px;
-    padding: 1em;
-    padding-top: 0;
-    background-color: #fff;
-    z-index: 1;
+  // position: absolute;
+  // top: 35%;
+  // left: 4.2%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5em;
+  height: 100px;
+  padding: 1em;
+  padding-top: 0;
+  background-color: #fff;
+  z-index: 1;
 }
 
 .errMsg {
-    white-space: break-spaces;
-    font-size: 1.1rem;
-    color: rgba(255, 0, 0, 0.8);
+  white-space: break-spaces;
+  font-size: 1.1rem;
+  color: rgba(255, 0, 0, 0.8);
 }
 
 .modalDialogActions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
 }
