@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import styles from "./MoveFile.module.scss";
+import styles from "./LinkToCCategory.module.scss";
 import { SPFI } from "@pnp/sp";
 import { SelectedFile } from "../../models/global.model";
 import modalStyles from "../../styles/modalStyles.module.scss";
