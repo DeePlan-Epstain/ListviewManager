@@ -3,7 +3,9 @@
 .top-spacer {
   padding: 6px;
 }
-
+.top-spacerLabel {
+  padding: 2px;
+}
 #modal-title {
   display: flex;
   justify-content: center;

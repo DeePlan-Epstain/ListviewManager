@@ -285,9 +285,10 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                     <Modal
                         open={true}
                         onClose={(event, reason) => {
-                            if (reason !== 'backdropClick') {
-                                this.props.close();
+                            if (this.state.isLoading || this.state.succeed) {
+                                return;
                             }
+                            else this.props.close();
                         }}
                         aria-labelledby="modal-title"
                         aria-describedby="modal-description"
@@ -304,7 +305,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                             dir="rtl"
                             style={{
                                 width: '450px',
-                                background: 'whitesmoke',
+                                background: 'white',
                                 padding: '20px',
                                 borderRadius: '5px',
                                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -312,19 +313,18 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                         >
                             <span id="modal-title">{this.state.DialogTitle}</span>
                             <div className="top-spacer" />
-
+                            <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>אל:</span>
+                            <div className="top-spacerLabel" />
                             <div className="SendDocumentContainer" dir="rtl">
                                 <Autocomplete
                                     onChange={(event, value) => this._onChangedTo(event, value)}
                                     dir="rtl"
                                     disablePortal
-                                    autoSelect
                                     multiple
                                     freeSolo
                                     disabled={this.state.isLoading || this.state.succeed}
-                                    id="combo-box-demo"
                                     options={this.state.ESArray}
-                                    ListboxProps={{ style: { maxHeight: '15rem', background: "whitesmoke" } }}
+                                    ListboxProps={{ style: { maxHeight: '15rem', background: "white" } }}
                                     renderInput={(params: any) => (
                                         <TextField
                                             dir="rtl"
@@ -332,7 +332,12 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                             fullWidth
                                             size="small"
                                             {...params}
-                                            label="אל"
+                                            //label="אל"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    padding: '0px !important',
+                                                }
+                                            }}
                                             required={true}
                                             helperText={
                                                 <span style={{ color: 'red' }}>{this.state.SendToError}</span>
@@ -341,13 +346,13 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     )}
                                 />
                                 <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>מכותבים:</span>
+                                <div className="top-spacerLabel" />
                                 <Autocomplete
                                     multiple
                                     disablePortal
                                     freeSolo
-                                    autoSelect
                                     disabled={this.state.isLoading || this.state.succeed}
-                                    id="combo-box-demo"
                                     ListboxProps={{ style: { maxHeight: '15rem' } }}
                                     onChange={(event, value) => this._onChangedCc(event, value)}
                                     options={this.state.ESArray}
@@ -356,7 +361,12 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                             dir="rtl"
                                             type="email"
                                             {...params}
-                                            label="מכותבים"
+                                            //label="מכותבים"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    padding: '0px !important',
+                                                }
+                                            }}
                                             helperText={
                                                 <span style={{ color: 'red' }}>{this.state.SendCcError}</span>
                                             }
@@ -364,13 +374,15 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     )}
                                 />
                                 <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>נושא:</span>
+                                <div className="top-spacerLabel" />
                                 <TextField
                                     style={{ direction: 'rtl' }}
                                     helperText={
                                         <span style={{ color: 'red' }}>{this.state.SubjectError}</span>
                                     }
                                     onChange={this._onChangedSubject}
-                                    label="נושא"
+                                    //label="נושא"
                                     disabled={this.state.isLoading || this.state.succeed}
                                     name="MailOptionSubject"
                                     required={true}
@@ -379,11 +391,12 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     size="small"
                                 />
                                 <div className="top-spacer" />
-
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תוכן המייל:</span>
+                                <div className="top-spacerLabel" />
                                 <TextField
                                     style={{ direction: 'rtl' }}
                                     onChange={this._onChangedBody}
-                                    label="תוכן המייל"
+                                    //label="תוכן המייל"
                                     disabled={this.state.isLoading || this.state.succeed}
                                     name="MailOptionBody"
                                     multiline
@@ -399,27 +412,18 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                 <Box
                                     sx={{
                                         display: 'flex',
-                                        justifyContent: 'center',
+                                        justifyContent: 'end',
                                         gap: '16px',
                                     }}
                                 >
                                     <Button
-                                        // sx={{
-                                        //     backgroundColor: '#d32f2f',
-                                        //     color: 'white',
-                                        //     '&:hover': { backgroundColor: '#b71c1c' },
-                                        //     '&.Mui-disabled': { backgroundColor: '#9e9e9e', color: 'white' },
-                                        // }}
                                         color="error"
                                         disabled={this.state.isLoading || this.state.succeed}
-                                        variant="outlined"
                                         onClick={this.props.close}
                                     >
                                         ביטול
                                     </Button>
                                     <Button
-                                        variant="contained"
-                                        color="success"
                                         onClick={this._submit}
                                         disabled={this.state.isLoading || this.state.succeed}
                                         startIcon={this.state.isLoading ? (
