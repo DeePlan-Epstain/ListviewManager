@@ -434,7 +434,10 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     <Button
                                         onClick={this._submit}
                                         disabled={this.state.isLoading || this.state.succeed}
-                                        endIcon={(!this.state.isLoading || !this.state.succeed) && <IconButton disableRipple style={{ transform: "rotate(180deg)", color:"#1976d2", "padding": 0 }} ><SendIcon/></IconButton>}
+                                        endIcon={(!this.state.isLoading || !this.state.succeed) && <IconButton disableRipple style={{ 
+                                            transform: "rotate(180deg)", 
+                                            color: this.state.isLoading || this.state.succeed ? 'inherit' : "#1976d2", 
+                                            "padding": 0 }} ><SendIcon/></IconButton>}
                                         startIcon={this.state.isLoading ? (
                                             <CircularProgress size={20} color="inherit" />
                                         ) : (

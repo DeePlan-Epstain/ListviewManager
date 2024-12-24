@@ -256,7 +256,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     style={{ color: '#1976d2' }}
                                     disabled={this.state.isSave}
                                     onClick={this.createFolder}
-                                    endIcon={<CheckIcon style={{color: "#1976d2", margin: "0px"}}/>}
+                                    endIcon={<CheckIcon style={{color: this.state.isSave ? 'inherit' : '#1976d2', margin: "0px"}}/>}
                                 >
                                     אישור
                                 </Button>

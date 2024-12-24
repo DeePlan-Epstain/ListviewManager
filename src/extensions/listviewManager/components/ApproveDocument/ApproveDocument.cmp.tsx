@@ -425,7 +425,7 @@ export default function ReviewDocument({
                     <Button
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={onConfirm}
-                      endIcon={!Boolean(errorMsg || isAskCancelRunningFlow) && <IconButton disableRipple style={{color: "#1976d2", margin: "0px"}}><CheckIcon/></IconButton>}
+                      endIcon={!Boolean(errorMsg || isAskCancelRunningFlow) && <IconButton disableRipple style={{color: Boolean(errorMsg || isAskCancelRunningFlow) ? 'inherit' :"#1976d2", margin: "0px"}}><CheckIcon/></IconButton>}
                     >
                       אישור
                     </Button>
