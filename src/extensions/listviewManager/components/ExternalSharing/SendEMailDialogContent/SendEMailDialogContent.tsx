@@ -1,6 +1,6 @@
 import * as React from "react";
 import "./SendEMailDialogContent.css";
-import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box } from '@mui/material'
+import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box, IconButton } from '@mui/material'
 import { ISendEMailDialogContentProps } from "./ISendEMailDialogContentProps";
 import { EMailProperties, EMailAttachment } from "../../../models/global.model";
 import { ISendEMailDialogContentState } from "./ISendEMailDialogContentState";
@@ -9,6 +9,8 @@ import { cacheRtl } from "../../../models/cacheRtl";
 import { StylesProvider } from '@material-ui/core/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CacheProvider } from '@emotion/react';
+import SendIcon from '@mui/icons-material/Send';
+import CloseIcon from '@mui/icons-material/Close';
 
 export class SendEMailDialogContent extends React.Component<ISendEMailDialogContentProps, ISendEMailDialogContentState> {
     private _eMailProperties: EMailProperties;
@@ -420,12 +422,22 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                         color="error"
                                         disabled={this.state.isLoading || this.state.succeed}
                                         onClick={this.props.close}
+                                        startIcon={ <IconButton disableRipple style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
+                                        sx={{
+                                            "& .MuiButton-startIcon": {
+                                                margin: 0, // Removes default margin
+                                            },
+                                        }}
                                     >
                                         ביטול
                                     </Button>
                                     <Button
                                         onClick={this._submit}
                                         disabled={this.state.isLoading || this.state.succeed}
+                                        endIcon={(!this.state.isLoading || !this.state.succeed) && <IconButton disableRipple style={{ 
+                                            transform: "rotate(180deg)", 
+                                            color: this.state.isLoading || this.state.succeed ? 'inherit' : "#1976d2", 
+                                            "padding": 0 }} ><SendIcon/></IconButton>}
                                         startIcon={this.state.isLoading ? (
                                             <CircularProgress size={20} color="inherit" />
                                         ) : (

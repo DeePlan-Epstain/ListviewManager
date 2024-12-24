@@ -81,6 +81,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     externalSharingCompareOneCommand.visible = false;
 
+    const compareThreeCommand: Command = this.tryGetCommand("Favorites");
+    compareThreeCommand.visible = true;
+
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
@@ -146,6 +149,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToShareDocumets(Array.from(event.selectedRows));
         }
+        break;
+      case "Favorites":
+        window.open("https://epstin100-my.sharepoint.com/favorites");
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);

@@ -10,7 +10,9 @@ import { downloadToPC, exportToZip, saveZipToSharePoint } from '../../service/zi
 import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
 import Swal from 'sweetalert2';
 import modalStyles from "../../styles/modalStyles.module.scss";
-
+import DownloadIcon from '@mui/icons-material/Download';
+import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 
 const style = {
     position: 'absolute',
@@ -85,20 +87,23 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
                             className={styles.modal_text}>
                             פעולה זו עשויה לקחת זמן, בסיום היצירה תופיע התראה.
                         </Typography>
-                        <div className={modalStyles.modalFooter}>
+                        <div className={`${modalStyles.modalFooter} ${modalStyles.modalFooterSpaceAround}`}>
                         <Button
                                 color="error"
                                 onClick={this.props.unMountDialog}
-                                className={`${styles.button}`}>
+                                className={`${styles.button}`}
+                                startIcon={ <CloseIcon style={{color: "#f58383", paddingLeft: "8px", margin: "0px !important"}} />}>
                                 ביטול
                             </Button>
                             <Button
                                 onClick={async () => this.download()}
-                                className={`${styles.button}`}>
+                                className={`${styles.button}`}
+                                endIcon={<DownloadIcon style={{color: '#1976d2', paddingRight: "8px"}}/>}>
                                 הורדה למחשב
                             </Button>
                             <Button
                                 color='success'
+                                endIcon={<SaveIcon style={{color: '#2e7d32', paddingRight: "8px"}}/>}
                                 onClick={() => this.saveToSharepoint()}
                                 className={`${styles.button}`}>
                                 שמירה באתר

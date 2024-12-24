@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import modalStyles from "../../styles/modalStyles.module.scss";
 import styles from "./ApproveDocument.module.scss";
 import { spfi, SPFI, SPFx } from "@pnp/sp";
-import { TextField, Button, FormControlLabel, Checkbox } from "@mui/material";
+import { TextField, Button, FormControlLabel, Checkbox, IconButton } from "@mui/material";
 import {
   PeoplePicker,
   PrincipalType,
@@ -22,6 +22,9 @@ import { Draggable } from "react-beautiful-dnd";
 import Loader from "../Loader/Loader.cmp";
 import { makeId } from "../../service/util.service";
 import { DocumentProps, SelectedFile } from "../../models/global.model";
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
+
 
 export interface ApproveDocumentProps {
   sp: SPFI;
@@ -410,12 +413,19 @@ export default function ReviewDocument({
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={unMountDialog}
                       color="error"
+                      startIcon={ <IconButton disableRipple style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
+                      sx={{
+                          "& .MuiButton-startIcon": {
+                              margin: 0,
+                          },
+                      }}
                     >
                       ביטול
                     </Button>
                     <Button
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={onConfirm}
+                      endIcon={!Boolean(errorMsg || isAskCancelRunningFlow) && <IconButton disableRipple style={{color: Boolean(errorMsg || isAskCancelRunningFlow) ? 'inherit' :"#1976d2", margin: "0px"}}><CheckIcon/></IconButton>}
                     >
                       אישור
                     </Button>
