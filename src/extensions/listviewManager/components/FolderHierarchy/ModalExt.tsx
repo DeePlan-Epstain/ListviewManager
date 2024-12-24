@@ -19,8 +19,10 @@ import { ThemeProvider, StylesProvider } from "@material-ui/core/styles";
 import { jss } from "../../models/jss";
 import { theme } from "../../models/theme";
 import modalStyles from "../../styles/modalStyles.module.scss";
-
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
 import CircularProgress from '@mui/material/CircularProgress';
+import { IconButton } from '@mui/material';
 
 
 
@@ -241,11 +243,12 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
                                 </div>
                             </div>
-                            <div className={modalStyles.modalFooter} style={{ padding: "0 29%" }}>
+                            <div className={modalStyles.modalFooter} style={{ padding: "0 24%" }}>
                                 <Button
                                     disabled={this.state.isSave}
                                     onClick={this.closeModal}
                                     style={{ color: 'red' }}
+                                    startIcon={<CloseIcon style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}/>}
                                 >
                                     ביטול
                                 </Button>
@@ -253,6 +256,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     style={{ color: '#1976d2' }}
                                     disabled={this.state.isSave}
                                     onClick={this.createFolder}
+                                    endIcon={<CheckIcon style={{color: "#1976d2", margin: "0px"}}/>}
                                 >
                                     אישור
                                 </Button>
