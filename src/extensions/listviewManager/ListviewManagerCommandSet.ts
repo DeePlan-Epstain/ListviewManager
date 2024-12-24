@@ -151,7 +151,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         }
         break;
       case "Favorites":
-        window.location.href = "https://epstin100-my.sharepoint.com/favorites";
+        window.open("https://epstin100-my.sharepoint.com/favorites");
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
