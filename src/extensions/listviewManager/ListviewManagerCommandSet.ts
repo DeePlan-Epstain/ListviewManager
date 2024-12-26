@@ -372,9 +372,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     // if there is only one selected item and its a file and its a file type that can be converted to pdf
     if (compareFiveCommand) {
-      compareFiveCommand.visible = event.selectedRows?.length === 1 &&
-        event.selectedRows[0]?.getValueByName('FSObjType') == 0 &&
-        this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));
+      console.log("selected item: ", event.selectedRows[0]);
+      compareFiveCommand.visible = event.selectedRows?.length === 1 
+      && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+      && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
+        // event.selectedRows[0].getValueByName("fileSize") > 0;
     }
 
     // if there is one selected item or more and its a file
