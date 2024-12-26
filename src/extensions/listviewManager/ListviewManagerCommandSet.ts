@@ -138,6 +138,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
             title: "בקשתך נקלטה בהצלחה",
             text: "המרת הקובץ תחל בשניות הקרובות",
             icon: "success",
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading(); // Show loading spinner
+
+          },
         });
         break;
       case "ExportToZip":
