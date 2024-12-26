@@ -422,7 +422,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                         color="error"
                                         disabled={this.state.isLoading || this.state.succeed}
                                         onClick={this.props.close}
-                                        startIcon={ <IconButton disableRipple style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
+                                        startIcon={ <IconButton disableRipple style={{color: this.state.isLoading || this.state.succeed ? 'inherit' : "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
                                         sx={{
                                             "& .MuiButton-startIcon": {
                                                 margin: 0, // Removes default margin
