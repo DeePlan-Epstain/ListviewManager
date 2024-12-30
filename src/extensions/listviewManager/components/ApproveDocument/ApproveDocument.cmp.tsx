@@ -2,8 +2,8 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import modalStyles from "../../styles/modalStyles.module.scss";
 import styles from "./ApproveDocument.module.scss";
-import { SPFI } from "@pnp/sp";
-import { TextField, Button, FormControlLabel, Checkbox } from "@mui/material";
+import { spfi, SPFI, SPFx } from "@pnp/sp";
+import { TextField, Button, FormControlLabel, Checkbox, IconButton } from "@mui/material";
 import {
   PeoplePicker,
   PrincipalType,
@@ -22,6 +22,9 @@ import { Draggable } from "react-beautiful-dnd";
 import Loader from "../Loader/Loader.cmp";
 import { makeId } from "../../service/util.service";
 import { DocumentProps, SelectedFile } from "../../models/global.model";
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
+
 
 export interface ApproveDocumentProps {
   sp: SPFI;
@@ -43,6 +46,8 @@ export default function ReviewDocument({
   const [loadingProps, setLoadingProps] = useState<{
     loading: boolean;
     msg: string;
+
+
   }>({
     loading: false,
     msg: "",
@@ -107,11 +112,14 @@ export default function ReviewDocument({
 
   const onConfirm = async (): Promise<void> => {
     try {
+      const spPortal= spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(context))
+      
+
       // Resolve user IDs for all approvers
       const approvesIdPromises = selectedFile.latestApprovers.map(
         async (approver: any) => {
           try {
-            const user = await sp.web.ensureUser(approver.loginName);
+            const user = await spPortal.web.ensureUser(approver.loginName);
             return user.data.Id;
           } catch (error) {
             console.log(
@@ -129,8 +137,13 @@ export default function ReviewDocument({
         setErrorMsg("אנא בחר לפחות מאשר אחד");
         return;
       } else {
+    const spPortal= spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(context))
+    const currUser = await spPortal.web.currentUser();
+    const fullUrl = context.pageContext.web.absoluteUrl; // כתובת האתר המלאה
+    const baseUrl = fullUrl.split("/").slice(0, 5).join("/"); // חיתוך החלק הרצוי
+
         // Add item to the SharePoint list with resolved user IDs
-        await sp.web.lists
+        await spPortal.web.lists
           .getById("968d78ad-3e30-4657-baf7-8ef5f5c6c40f")
           .items.add({
             Title: currUser.Title,
@@ -145,6 +158,8 @@ export default function ReviewDocument({
             ApproveStatus: selectedFile.approveStatus,
             InitiatorId: currUser.Id,
             DocServerRelativeUrl: selectedFile.ServerRelativeUrl,
+            baseUrl:baseUrl
+            
           });
 
         // Optionally, you can add a message to indicate successful addition
@@ -393,17 +408,24 @@ export default function ReviewDocument({
                     </Droppable>
                   </div>
 
-                  <div className={modalStyles.modalFooter}>
+                  <div className={`${modalStyles.modalFooter} ${modalStyles.modalFooterEnd}`}>
                     <Button
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={unMountDialog}
                       color="error"
+                      startIcon={ <IconButton disableRipple style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
+                      sx={{
+                          "& .MuiButton-startIcon": {
+                              margin: 0,
+                          },
+                      }}
                     >
                       ביטול
                     </Button>
                     <Button
                       disabled={Boolean(errorMsg || isAskCancelRunningFlow)}
                       onClick={onConfirm}
+                      endIcon={!Boolean(errorMsg || isAskCancelRunningFlow) && <IconButton disableRipple style={{color: Boolean(errorMsg || isAskCancelRunningFlow) ? 'inherit' :"#1976d2", margin: "0px"}}><CheckIcon/></IconButton>}
                     >
                       אישור
                     </Button>
@@ -414,8 +436,7 @@ export default function ReviewDocument({
               {isAskCancelRunningFlow && (
                 <div className={modalStyles.modalDialogContainer}>
                   <span>
-                    There is an active approvals flow on this document, do you
-                    want to cancel it?
+                   יש תהליך אישור פעיל על מסמך זה. האם ברצונך לבטל אותו?
                   </span>
                   <div className={modalStyles.modalDialogActions}>
                     <Button color="warning" onClick={cancelRunningFlow}>

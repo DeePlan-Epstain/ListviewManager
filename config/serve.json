@@ -4,7 +4,7 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://epstin100.sharepoint.com/sites/JerusalemDistrict/Shared%20Documents/Forms/AllItems.aspx",
+      "pageUrl": "https://epstin100.sharepoint.com/sites/RailwaysDepartment/DocLib/Forms/AllItems.aspx?id=%2Fsites%2FRailwaysDepartment%2FDocLib%2F%D7%A9%D7%9D%20%D7%9C%D7%A7%D7%95%D7%97%5F%D7%A9%D7%9D%20%D7%A4%D7%A8%D7%95%D7%99%D7%A7%D7%98%5F%D7%9E%D7%A1%D7%A4%D7%A8%20%D7%A4%D7%A8%D7%95%D7%99%D7%A7%D7%98%2F%D7%91%D7%99%D7%A6%D7%95%D7%A2%2FRFI&viewid=3877b88b%2D09b3%2D438c%2D949a%2D07fe1114d664",
       "customActions": {
         "8cafb949-073a-4a69-937e-05b37bf163ea": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
@@ -16,7 +16,7 @@
       }
     },
     "listviewManager": {
-      "pageUrl": "https://epstin100.sharepoint.com/sites/JerusalemDistrict/Shared%20Documents/Forms/AllItems.aspx",
+      "pageUrl": "https://epstin100.sharepoint.com/sites/RailwaysDepartment/DocLib/Forms/AllItems.aspx?id=%2Fsites%2FRailwaysDepartment%2FDocLib%2F%D7%A9%D7%9D%20%D7%9C%D7%A7%D7%95%D7%97%5F%D7%A9%D7%9D%20%D7%A4%D7%A8%D7%95%D7%99%D7%A7%D7%98%5F%D7%9E%D7%A1%D7%A4%D7%A8%20%D7%A4%D7%A8%D7%95%D7%99%D7%A7%D7%98%2F%D7%91%D7%99%D7%A6%D7%95%D7%A2%2FRFI&viewid=3877b88b%2D09b3%2D438c%2D949a%2D07fe1114d664",
       "customActions": {
         "8cafb949-073a-4a69-937e-05b37bf163ea": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",

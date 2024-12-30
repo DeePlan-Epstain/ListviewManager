@@ -11,20 +11,48 @@
     "Approval_Document": {
       "position": 8,
       "title": {
-        "default": "לאישור מסמך"
+        "default": "סבב אישורים"
       },
-      "iconImageUrl": "../listviewManager/assets/imgs/approvalDocumentIcon.svg",
+      "iconImageUrl": "./assets/imgs/approve.svg",
       "type": "command"
-    } 
-    ,
+    },
     "folderHierarchy": {
       "position": 2,
       "title": {
         "default": "יצירת היררכית תיקיות"
       },
-      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "iconImageUrl": "./assets/imgs/add.svg",
       "type": "command"
-      
+    },
+    "convertToPDF": {
+      "position": 3,
+      "title": {
+        "default": "המרה ל-PDF"
+      },
+      "iconImageUrl": "./assets/imgs/pdf.svg",
+      "type": "command"
+    },
+    "ExportToZip": {
+      "position": 3,
+      "title": {
+        "default": "ייצוא ל-ZIP"
+      },
+      "iconImageUrl": "./assets/imgs/zip.svg",
+      "type": "command"
+    },
+    "External_Sharing": {
+      "title": {
+        "default": "שיתוף קובץ במייל"
+      },
+      "iconImageUrl": "./assets/imgs/share.svg",
+      "type": "command"
+    },
+    "Favorites": {
+      "title": {
+        "default": "המועדפים שלי"
+      },
+      "iconImageUrl": "./assets/imgs/favorites.svg",
+      "type": "command"
     }
     ,
     "linkToCategory": {

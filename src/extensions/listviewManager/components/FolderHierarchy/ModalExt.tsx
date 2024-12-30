@@ -18,8 +18,11 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 import { ThemeProvider, StylesProvider } from "@material-ui/core/styles";
 import { jss } from "../../models/jss";
 import { theme } from "../../models/theme";
-
+import modalStyles from "../../styles/modalStyles.module.scss";
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
 import CircularProgress from '@mui/material/CircularProgress';
+import { IconButton } from '@mui/material';
 
 
 
@@ -38,8 +41,6 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
             FolderHierarchyValidate: false,
             NewFolderName: "",
             NewFolderNameValidate: false,
-
-
         }
     }
 
@@ -97,18 +98,18 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
 
                 const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
                 console.log("destinationUrl", destinationUrl);
-                
-                
-                
+
+
+
                 await this._spWithCustomUrl.web.rootFolder.folders.getByUrl(`FolderHierarchy`).folders.getByUrl(`${this.state.FolderHierarchy.Name}`).copyByPath(destinationUrl, true);
-                
+
                 this.closeModal();
                 location.reload();
-                
-            }catch (e) {
+
+            } catch (e) {
                 console.log(e);
-                
-            this.setState({ isSave: false });
+
+                this.setState({ isSave: false });
 
             }
 
@@ -158,7 +159,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
             FolderHierarchyValidate: false,
             NewFolderName: "",
             NewFolderNameValidate: false,
-        },()=>{
+        }, () => {
             document.getElementById("modal-back2").className = "modal-back2"
             document.getElementById("modal-content2").className = "modal-content2"
         })
@@ -242,22 +243,22 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                     *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
                                 </div>
                             </div>
-                            <div className="modal-footer">
+                            <div className={modalStyles.modalFooter} style={{ padding: "0 24%" }}>
                                 <Button
-                                    variant="contained"
-                                    style={{ backgroundColor: "green", color: "white" }}
-                                    disabled={this.state.isSave}
-                                    onClick={this.createFolder}
-                                >
-                                    אישור
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    style={{ borderColor: "red", color: "red" }}
                                     disabled={this.state.isSave}
                                     onClick={this.closeModal}
+                                    style={{ color: 'red' }}
+                                    startIcon={<CloseIcon style={{color: "#f58383", paddingLeft: 0, margin: "0px !important"}}/>}
                                 >
                                     ביטול
+                                </Button>
+                                <Button
+                                    style={{ color: '#1976d2' }}
+                                    disabled={this.state.isSave}
+                                    onClick={this.createFolder}
+                                    endIcon={<CheckIcon style={{color: this.state.isSave ? 'inherit' : '#1976d2', margin: "0px"}}/>}
+                                >
+                                    אישור
                                 </Button>
                             </div>
                             <div>
@@ -268,8 +269,6 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                                 }
 
                             </div>
-
-
                         </div >
                     </div >
                 </ThemeProvider>
