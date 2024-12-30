@@ -22,6 +22,7 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
+import LinkToCategory, {LinkToCategoryProps} from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
@@ -132,6 +133,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       case "folderHierarchy":
         this._renderfolderHierarchytModal(finalPath, "Approval");
         break;
+
+      case "linkToCategory":
+        this._renderLinkToCategoryModal(selectedFiles);
+        break;
+
       case "convertToPDF":
         ConvertToPdf(this.context, selectedFiles[0]);
         Swal.fire({
@@ -238,9 +244,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 
-  private _renderMoveFileModal(selectedRows: any[]) {
+  private _renderLinkToCategoryModal(selectedRows: any[]) {
     const element: React.ReactElement<MoveFileProps> = React.createElement(
-      MoveFile,
+      LinkToCategory,
       {
         sp: this.sp,
         context: this.context,
@@ -364,7 +370,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     let LibraryName = this.context.pageContext.list.title;
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
+    const compareThreeCommand: Command = this.tryGetCommand("linkToCategory");
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
@@ -375,6 +381,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
     }
 
+    if(compareThreeCommand){
+      compareThreeCommand.visible = event.selectedRows?.length === 1;      
     // if there is only one selected item and its a file and its a file type that can be converted to pdf
     if (compareFiveCommand) {
       console.log("selected item: ", event.selectedRows[0]);

@@ -1,0 +1,11 @@
+.hiddenMoveFileModal,
+.moveFileModal {
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    min-height: 01;
+}
+
+.hiddenMoveFileModal {
+    visibility: hidden;
+}
