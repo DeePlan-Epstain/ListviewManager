@@ -279,7 +279,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
 
     if(compareThreeCommand){
-      compareThreeCommand.visible = event.selectedRows?.length === 1;
+      compareThreeCommand.visible = event.selectedRows?.length === 1;      
     }
 
     // if (compareThreeCommand) {

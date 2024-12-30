@@ -80,71 +80,29 @@ export default function LinkToCategory({
     }
   };
 
-  const onFolderSelect = async (folder: IFolder): Promise<void> => {
+  const onFolderSelect = async (folder: IFolder) => {
     try {
       const libPath = context.pageContext.list.serverRelativeUrl;
+      const item = selectedRows[0];
+      // Define the target library or folder and link details
+      const targetLibraryUrl = folder.ServerRelativeUrl; // Server relative path to your library
+      const fileName = `${item.FileLeafRef}.url`; // Name of the link file
+      // const linkUrl = "https://epstin100.sharepoint.com/sites/JerusalemDistrict/Shared%20Documents/%D7%97%D7%95%D7%91%D7%A8%D7%AA122.xlsx"; // URL of the document
+      const linkUrl = `https://epstin100.sharepoint.com${item.FileRef}`
+      const fileContent = `[InternetShortcut]\nURL=${linkUrl}`;
 
-      for (const selectedRow of selectedRows) {
-        const destUrl = folder.ServerRelativeUrl + "/" + selectedRow.FileLeafRef;
-        console.log("selected row: ", selectedRow);
+      // Convert file content to a Blob
+      const fileBlob = new Blob([fileContent], { type: "text/plain" });
 
-        if (destUrl === selectedRow.FileRef) {
-          setErrorMsg("The selected folder is the same as the current folder.");
-          return;
-        }
+      // Upload the file
+      const result = await sp.web.getFolderByServerRelativePath(targetLibraryUrl).files.addUsingPath(fileName, fileBlob, { Overwrite: true });
 
-        const destFolderProps: any = await sp.web
-          .getFolderByServerRelativePath(folder.ServerRelativeUrl)
-          .expand("properties")();
-        console.log("dest props: ", destFolderProps);
-        
-        const listId = destFolderProps.Properties["vti_x005f_listname"].slice(
-          1,
-          -1
-        );
-        console.log("list id: ", listId);
-        
-        const shortFromPath = selectedRow.FileRef.split("/").slice(3).join("/")
-        const shortcutFromPath = selectedRow.FileRef;
-        const shortcutToPath = `${folder.ServerRelativeUrl}/${selectedRow.FileLeafRef}`;
-
-
-        let relativeurl: string = selectedRow.FileRef;
-        const fileName: string = selectedRow.FileLeafRef;
-        const parts = shortcutFromPath.split('/');
-        const threeParts = parts.slice(0,4);
-        relativeurl = threeParts.join('/')
-        console.log("fileurl: ", relativeurl);     
-
-      const inputUrl = `https://epstin100.sharepoint.com${relativeurl}?d=w${selectedRow.UniqueId.replaceAll('-', '')}`
-      const shortcutContent = `[InternetShortcut]
-      URL=${inputUrl}`;
-      console.log(inputUrl);
-      
-    // Create the shortcut file in the destination folder
-    const item = await sp.web
-      .getFolderByServerRelativePath(folder.ServerRelativeUrl)
-      .files.addUsingPath(destUrl, shortcutContent, { Overwrite: true });
-      
-      console.log("Shortcut created from:", shortcutFromPath);
-      console.log("Shortcut created in:", shortcutToPath);
-
-      }
-      unMountDialog();
-    } catch (err) {
-      console.error("onFolderSelect", err);
-      if (err.message.includes("Access denied"))
-        setErrorMsg(
-          "Your account does not have permission to move the files to the selected folder"
-        );
-      else if (err.message.includes("The destination file already exists"))
-        setErrorMsg("The destination file already exists");
-      else
-        setErrorMsg(
-          "Error occurred while linking to categories, please contact administrator"
-        );
+      console.log(`Result of link creation: ${JSON.stringify(result)}`);
+    } catch (error) {
+      console.error("Error creating link file:", error);
     }
   };
+
   const serverRelativeUrl = context.pageContext.site.serverRelativeUrl; // to allow to use in multiple sites
   return (
     <div>
