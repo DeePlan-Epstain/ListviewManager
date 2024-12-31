@@ -10,7 +10,7 @@ import {
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
-import { SelectedFile } from "./models/global.model";
+import { EMailProperties, SelectedFile } from "./models/global.model";
 import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
@@ -25,7 +25,8 @@ import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
-import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
+import { SendEMailDialogContent } from "./components/ExternalSharing/SendEMailDialogContent/SendEMailDialogContent";
+import { ISendEMailDialogContentProps } from "./components/ExternalSharing/SendEMailDialogContent/ISendEMailDialogContentProps";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -136,7 +137,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // Check if the user selected some items
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
-          await this.processSelectedRowsAndContacts(Array.from(event.selectedRows));
+          await this.selectedRowsToShareDocuments(Array.from(event.selectedRows));
         }
         break;
       // case "Move_File":
@@ -280,7 +281,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  private async processSelectedRowsAndContacts(selectedRows: any[]): Promise<void> {
+  private async selectedRowsToShareDocuments(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
@@ -321,10 +322,34 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
     SendDocumentService.ServerRelativeUrl = currentRelativeUrl;
 
-    // Create and display the email dialog
-    const dialog: SendEMailDialog = new SendEMailDialog(SendDocumentService);
-    await dialog.show();
+    const element: React.ReactElement<ISendEMailDialogContentProps> = React.createElement(
+      SendEMailDialogContent,
+      {
+        close: this._closeDialogContainer,
+        eMailProperties: new EMailProperties({
+          To: "",
+          Cc: "",
+          Subject: `שיתוף מסמך - ${SendDocumentService.fileNames}`,
+          Body: "",
+        }),
+        sendDocumentService: SendDocumentService,
+        submit: () => {
+          // Clear eMailProperties values
+          new EMailProperties({
+            To: "",
+            Cc: "",
+            Subject: "",
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      }
+    );
+
+    ReactDom.render(element, this.dialogContainer);
   }
+
 
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");

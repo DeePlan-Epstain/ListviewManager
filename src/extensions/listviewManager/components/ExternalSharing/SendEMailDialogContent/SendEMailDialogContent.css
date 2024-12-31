@@ -12,6 +12,15 @@
   font-size: 16px;
   font-weight: 600;
 }
+
+.richTextEditor .ql-editor {
+  direction: rtl;
+  /* text-align: right; */
+  border-color: rgba(0, 0, 0, 0.23) !important;
+  border-radius: 4px;
+  height: 100px;
+}
+
 @media screen and (min-width: 1281px) {
   div.DialogContentModal {
     font-family: "Heebo", sans-serif !important;

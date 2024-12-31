@@ -9,6 +9,7 @@ import { cacheRtl } from "../../../models/cacheRtl";
 import { StylesProvider } from '@material-ui/core/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CacheProvider } from '@emotion/react';
+import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 
 export class SendEMailDialogContent extends React.Component<ISendEMailDialogContentProps, ISendEMailDialogContentState> {
     private _eMailProperties: EMailProperties;
@@ -121,12 +122,20 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         this._eMailProperties.Cc = value.join(";");
     };
 
+    private htmlToPlainText(html: any) {
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = html;
+        return tempElement.innerText;
+    }
+
     // Triggered every time Body is changed, set MailOptionBody(react state) and _eMailProperties(Class member) to the new value and finally reset the field validation
-    private _onChangedBody = (e: any) => {
+    private _onChangedBody = (newValue: string): string => {
+        const plainText = this.htmlToPlainText(newValue);
         this.setState({
-            MailOptionBody: e.target.value,
+            MailOptionBody: newValue,
         });
-        this._eMailProperties.Body = e.target.value;
+        this._eMailProperties.Body = newValue;
+        return newValue;
     };
 
     // Returns EMailAttachment object which contains the file name and its Content Encodes into base64 string
@@ -297,7 +306,6 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            zIndex: '9999999',
                         }}
                     >
                         <div
@@ -393,7 +401,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תוכן המייל:</span>
                                 <div className="top-spacerLabel" />
-                                <TextField
+                                {/* <TextField
                                     style={{ direction: 'rtl' }}
                                     onChange={this._onChangedBody}
                                     //label="תוכן המייל"
@@ -405,6 +413,12 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     value={this.state.MailOptionBody}
                                     fullWidth
                                     size="small"
+                                /> */}
+                                <RichText
+                                    value={this.state.MailOptionBody}
+                                    isEditMode={!this.state.isLoading && !this.state.succeed}
+                                    className="richTextEditor"
+                                    onChange={(newValue: string) => this._onChangedBody(newValue)}
                                 />
                                 <div className="top-spacer" />
                             </div>
