@@ -11,7 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CacheProvider } from '@emotion/react';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
-
+import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 export class SendEMailDialogContent extends React.Component<ISendEMailDialogContentProps, ISendEMailDialogContentState> {
     private _eMailProperties: EMailProperties;
     private copiedFileUri: string[];
@@ -69,16 +69,13 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         const invalidEmails = value.filter(email => !emailRegex.test(email));
 
         // If there are any invalid emails, set an error message
-        if (invalidEmails.length > 0) {
-            this.setState({
-                SendToError: `כתובת אימייל לא תקינה: ${invalidEmails.join(", ")}`,
-            });
-        } else {
+        if (!invalidEmails.length) {
             // Reset the error message if all emails are valid
             this.setState({
                 SendToError: "",
             });
         }
+
 
         // Always update the MailOptionTo value
         this.setState(
@@ -100,11 +97,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         const invalidEmails = value.filter(email => !emailRegex.test(email));
 
         // If there are any invalid emails, set an error message
-        if (invalidEmails.length > 0) {
-            this.setState({
-                SendCcError: `כתובת אימייל לא תקינה: ${invalidEmails.join(", ")}`,
-            });
-        } else {
+        if (!invalidEmails.length) {
             // Reset the error message if all emails are valid
             this.setState({
                 SendCcError: "",
@@ -124,12 +117,22 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
     };
 
     // Triggered every time Body is changed, set MailOptionBody(react state) and _eMailProperties(Class member) to the new value and finally reset the field validation
-    private _onChangedBody = (e: any) => {
+    private htmlToPlainText(html: any) {
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = html;
+        return tempElement.innerText;
+    }
+
+    // Triggered every time Body is changed, set MailOptionBody(react state) and _eMailProperties(Class member) to the new value and finally reset the field validation
+    private _onChangedBody = (newValue: string): string => {
+        const plainText = this.htmlToPlainText(newValue);
         this.setState({
-            MailOptionBody: e.target.value,
+            MailOptionBody: newValue,
         });
-        this._eMailProperties.Body = e.target.value;
+        this._eMailProperties.Body = newValue;
+        return newValue;
     };
+
 
     // Returns EMailAttachment object which contains the file name and its Content Encodes into base64 string
     private getEMailAttachment(): Promise<EMailAttachment[]> {
@@ -299,7 +302,6 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            zIndex: '9999999',
                         }}
                     >
                         <div
@@ -341,8 +343,8 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                                 }
                                             }}
                                             required={true}
-                                            helperText={
-                                                <span style={{ color: 'red' }}>{this.state.SendToError}</span>
+                                            helperText={this.state.SendToError ?
+                                                <span className="errorSpan">{this.state.SendToError}</span> : <span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
                                             }
                                         />
                                     )}
@@ -369,8 +371,8 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                                     padding: '0px !important',
                                                 }
                                             }}
-                                            helperText={
-                                                <span style={{ color: 'red' }}>{this.state.SendCcError}</span>
+                                            helperText={this.state.SendCcError ?
+                                                <span className="errorSpan">{this.state.SendCcError}</span> : < span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
                                             }
                                         />
                                     )}
@@ -395,7 +397,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תוכן המייל:</span>
                                 <div className="top-spacerLabel" />
-                                <TextField
+                                {/* <TextField
                                     style={{ direction: 'rtl' }}
                                     onChange={this._onChangedBody}
                                     //label="תוכן המייל"
@@ -407,6 +409,12 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     value={this.state.MailOptionBody}
                                     fullWidth
                                     size="small"
+                                /> */}
+                                <RichText
+                                    value={this.state.MailOptionBody}
+                                    isEditMode={!this.state.isLoading && !this.state.succeed}
+                                    className="richTextEditor"
+                                    onChange={(newValue: string) => this._onChangedBody(newValue)}
                                 />
                                 <div className="top-spacer" />
                             </div>
@@ -422,7 +430,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                         color="error"
                                         disabled={this.state.isLoading || this.state.succeed}
                                         onClick={this.props.close}
-                                        startIcon={ <IconButton disableRipple style={{color: this.state.isLoading || this.state.succeed ? 'inherit' : "#f58383", paddingLeft: 0, margin: "0px !important"}}><CloseIcon /></IconButton>}
+                                        startIcon={<IconButton disableRipple style={{ color: this.state.isLoading || this.state.succeed ? 'inherit' : "#f58383", paddingLeft: 0, margin: "0px !important" }}><CloseIcon /></IconButton>}
                                         sx={{
                                             "& .MuiButton-startIcon": {
                                                 margin: 0, // Removes default margin
@@ -434,10 +442,11 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     <Button
                                         onClick={this._submit}
                                         disabled={this.state.isLoading || this.state.succeed}
-                                        endIcon={(!this.state.isLoading || !this.state.succeed) && <IconButton disableRipple style={{ 
-                                            transform: "rotate(180deg)", 
-                                            color: this.state.isLoading || this.state.succeed ? 'inherit' : "#1976d2", 
-                                            "padding": 0 }} ><SendIcon/></IconButton>}
+                                        endIcon={(!this.state.isLoading || !this.state.succeed) && <IconButton disableRipple style={{
+                                            transform: "rotate(180deg)",
+                                            color: this.state.isLoading || this.state.succeed ? 'inherit' : "#1976d2",
+                                            "padding": 0
+                                        }} ><SendIcon /></IconButton>}
                                         startIcon={this.state.isLoading ? (
                                             <CircularProgress size={20} color="inherit" />
                                         ) : (
