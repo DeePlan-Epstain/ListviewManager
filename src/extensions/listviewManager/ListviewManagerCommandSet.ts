@@ -10,7 +10,7 @@ import {
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
-import { SelectedFile } from "./models/global.model";
+import { EMailProperties, SelectedFile } from "./models/global.model";
 import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
@@ -22,13 +22,14 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
-import LinkToCategory, {LinkToCategoryProps} from "./components/LinkToCategory/LinkToCategory";
+import LinkToCategory, { LinkToCategoryProps } from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
-import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
 import Swal from 'sweetalert2';
+import { ISendEMailDialogContentProps } from "./components/ExternalSharing/SendEMailDialogContent/ISendEMailDialogContentProps";
+import { SendEMailDialogContent } from "./components/ExternalSharing/SendEMailDialogContent/SendEMailDialogContent";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -141,12 +142,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       case "convertToPDF":
         ConvertToPdf(this.context, selectedFiles[0]);
         Swal.fire({
-            title: "בקשתך נקלטה בהצלחה",
-            text: "המרת הקובץ תחל בשניות הקרובות",
-            icon: "success",
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading(); // Show loading spinner
+          title: "בקשתך נקלטה בהצלחה",
+          text: "המרת הקובץ תחל בשניות הקרובות",
+          icon: "success",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading(); // Show loading spinner
 
           },
         });
@@ -158,7 +159,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // Check if the user selected some items
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
-          await this.selectedRowsToShareDocumets(Array.from(event.selectedRows));
+          await this.selectedRowsToShareDocuments(Array.from(event.selectedRows));
         }
         break;
       case "Favorites":
@@ -318,7 +319,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  private async selectedRowsToShareDocumets(selectedRows: any[]): Promise<void> {
+  private async selectedRowsToShareDocuments(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
@@ -359,10 +360,34 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
     SendDocumentService.ServerRelativeUrl = currentRelativeUrl;
 
-    // Create and display the email dialog
-    const dialog: SendEMailDialog = new SendEMailDialog(SendDocumentService);
-    await dialog.show();
+    const element: React.ReactElement<ISendEMailDialogContentProps> = React.createElement(
+      SendEMailDialogContent,
+      {
+        close: this._closeDialogContainer,
+        eMailProperties: new EMailProperties({
+          To: "",
+          Cc: "",
+          Subject: `שיתוף מסמך - ${SendDocumentService.fileNames}`,
+          Body: "",
+        }),
+        sendDocumentService: SendDocumentService,
+        submit: () => {
+          // Clear eMailProperties values
+          new EMailProperties({
+            To: "",
+            Cc: "",
+            Subject: "",
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      }
+    );
+
+    ReactDom.render(element, this.dialogContainer);
   }
+
 
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
@@ -381,47 +406,48 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
     }
 
-    if(compareThreeCommand){
-      compareThreeCommand.visible = event.selectedRows?.length === 1;      
-    // if there is only one selected item and its a file and its a file type that can be converted to pdf
-    if (compareFiveCommand) {
-      console.log("selected item: ", event.selectedRows[0]);
-      compareFiveCommand.visible = event.selectedRows?.length === 1 
-      && event.selectedRows[0]?.getValueByName('FSObjType') == 0
-      && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
+    if (compareThreeCommand) {
+      compareThreeCommand.visible = event.selectedRows?.length === 1;
+      // if there is only one selected item and its a file and its a file type that can be converted to pdf
+      if (compareFiveCommand) {
+        console.log("selected item: ", event.selectedRows[0]);
+        compareFiveCommand.visible = event.selectedRows?.length === 1
+          && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+          && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
         // event.selectedRows[0].getValueByName("fileSize") > 0;
+      }
+
+      // if there is one selected item or more and its a file
+      if (externalSharingCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+        } else externalSharingCompareOneCommand.visible = false;
+      }
+
+      if (compareSixCommand) {
+        compareSixCommand.visible = event.selectedRows?.length >= 1;
+      }
+
+      // if (compareThreeCommand) {
+      //   if (event.selectedRows?.length > 0) {
+      //     const isFolder = Boolean(
+      //       event.selectedRows.find(
+      //         (r) => r.getValueByName("ContentType") === "Folder"
+      //       )
+      //     );
+      //     compareThreeCommand.visible = !isFolder;
+      //   } else compareThreeCommand.visible = false;
+      // }
+
+      // if (compareFourCommand) {
+      //   compareFourCommand.visible = event.selectedRows?.length === 1;
+      // }
+
+      // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+      // if (compareTwoCommand) {
+      //   compareTwoCommand.visible = event.selectedRows?.length === 1;
+      // }
     }
-
-    // if there is one selected item or more and its a file
-    if (externalSharingCompareOneCommand) {
-      if (event.selectedRows?.length > 0) {
-        const fileExt = event.selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-      } else externalSharingCompareOneCommand.visible = false;
-    }
-
-    if (compareSixCommand) {
-      compareSixCommand.visible = event.selectedRows?.length >= 1;
-    }
-
-    // if (compareThreeCommand) {
-    //   if (event.selectedRows?.length > 0) {
-    //     const isFolder = Boolean(
-    //       event.selectedRows.find(
-    //         (r) => r.getValueByName("ContentType") === "Folder"
-    //       )
-    //     );
-    //     compareThreeCommand.visible = !isFolder;
-    //   } else compareThreeCommand.visible = false;
-    // }
-
-    // if (compareFourCommand) {
-    //   compareFourCommand.visible = event.selectedRows?.length === 1;
-    // }
-
-    // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    // if (compareTwoCommand) {
-    //   compareTwoCommand.visible = event.selectedRows?.length === 1;
-    // }
   }
 }
