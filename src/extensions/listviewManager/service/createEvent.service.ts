@@ -1,15 +1,15 @@
-﻿import {
+import {
     MSGraphClientFactory,
     MSGraphClientV3
 } from '@microsoft/sp-http';
 import { Constants } from '../models/Constants';
-import { EMailProperties } from '../models/global.model';
-import { IService } from '../components/ExternalSharing/models/IService';
+import { EventProperties } from '../models/global.model';
+import { IService } from '../components/MeetingInv/models/IService';
 import { getSP } from "../../../pnpjs-config";
 import { SPFI } from '@pnp/sp';
 
 
-export class SendDocumentService implements IService {
+export class CreateEvent implements IService {
     public context: any;
     public webUri: string;
     public msGraphClientFactory: MSGraphClientFactory;
@@ -19,7 +19,7 @@ export class SendDocumentService implements IService {
     public ServerRelativeUrl: string;
     public EmailAddress: any;
     private sp: SPFI;
-    private static instance: SendDocumentService;
+    private static instance: CreateEvent;
 
     // private constructor(context?: any) {
     //     this.context = context;
@@ -28,10 +28,10 @@ export class SendDocumentService implements IService {
 
     // Return the same object if not changed or a new one
     public static getInstance() {
-        if (!SendDocumentService.instance) {
-            SendDocumentService.instance = new SendDocumentService();
+        if (!CreateEvent.instance) {
+            CreateEvent.instance = new CreateEvent();
         }
-        return SendDocumentService.instance;
+        return CreateEvent.instance;
     }
 
     /**
@@ -157,84 +157,58 @@ export class SendDocumentService implements IService {
     }
 
     // Send the email with its content
-    public sendEMail(emailProperties: EMailProperties): Promise<boolean | Error> {
+    public createEvent(eventProperties: EventProperties): Promise<boolean | Error> {
 
+        type Attendee = {
+            emailAddress: {
+                address: string;
+                name?: string;
+            },
+            type: string;
+        }
+
+        type Attachment = {
+            "@odata.type": string;
+            name: string;
+            contentBytes: string;
+        }
         // Split emails into arrays
-        const BaseToArray = emailProperties.To.split(';');
-        const BaseCcArray = emailProperties.Cc.split(';');
-
-        // GraphApi Email format
-        const mail: any = {
-            message: {
-                subject: emailProperties.Subject,
-                body: {
-                    contentType: "HTML",
-                    content: `<div dir="rtl">${emailProperties.Body}</div>`
+        const attendees: Attendee[] = eventProperties.To.split(';').map(email => {
+            return {
+                emailAddress: {
+                    address: email, // Email address is required
                 },
-                toRecipients: [],
-                ccRecipients: [],
-                attachments: emailProperties.Attachment?.map((attachment: any) => ({
-                    "@odata.type": "#microsoft.graph.fileAttachment",
-                    "name": attachment.FileName,
-                    "contentBytes": attachment.ContentBytes
-                }))
-
+                type: "required",
             }
+        })
+
+
+        const attachments: Attachment[] = eventProperties.Attachment.map(attachment => {
+            return {
+                "@odata.type": "#microsoft.graph.fileAttachment",
+                name: attachment.FileName,
+                contentBytes: attachment.ContentBytes
+            }
+        })
+        console.log("createEvent - attachments:", attachments)
+
+        const newEvent = {
+            subject: "Quarterly Planning Meeting with Attachments",
+            body: {
+                contentType: "HTML",
+                content: "Please review the attached agenda before the meeting.",
+            },
+            start: {
+                dateTime: "2025-01-01T09:00:00",
+                timeZone: "Asia/Jerusalem",
+            },
+            end: {
+                dateTime: "2025-01-01T10:00:00",
+                timeZone: "Asia/Jerusalem",
+            },
+            attendees: attendees,
+
         };
-
-        // Handle empty "To" Email, if not empty populate email inside toRecipients
-        for (var i = 0; i < BaseToArray.length; i++) {
-            // push toRecipients into GraphApi Object only if email is not empty
-            if (BaseToArray[i].trim() !== '') {
-                // If its the last email in the list returns the object without "," in the end
-                if (BaseToArray.length - 1 === i) {
-                    mail.message.toRecipients.push(
-                        {
-                            emailAddress: {
-                                address: BaseToArray[i].trim()
-                            }
-                        }
-                    );
-                }
-                else {
-                    mail.message.toRecipients.push(
-                        {
-                            emailAddress: {
-                                address: BaseToArray[i].trim()
-                            }
-                        },
-                    );
-                }
-            }
-        }
-
-        // Handle empty Cc, if not empty populate emails inside ccRecipients
-        if (emailProperties.Cc.trim() !== '') {
-            for (i = 0; i < BaseCcArray.length; i++) {
-                // push ccRecipients into GraphApi Object only if email is not empty
-                if (BaseCcArray[i].trim() !== '') {
-                    // If its the last email in the list returns the object without "," in the end
-                    if (BaseCcArray.length - 1 === i) {
-                        mail.message.ccRecipients.push(
-                            {
-                                emailAddress: {
-                                    address: BaseCcArray[i].trim()
-                                }
-                            }
-                        );
-                    }
-                    else {
-                        mail.message.ccRecipients.push(
-                            {
-                                emailAddress: {
-                                    address: BaseCcArray[i].trim()
-                                }
-                            },
-                        );
-                    }
-                }
-            }
-        }
 
         // Get the client from sharepoint and make an api call in his name to "MSGraphClient" in order to send the email
         return new Promise((resolve, reject) => {
@@ -242,10 +216,27 @@ export class SendDocumentService implements IService {
                 .getClient('3')
                 .then((client: MSGraphClientV3) => {
                     client
-                        .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_SEND_EMAIL_URI}`)
-                        .post(mail)
-                        .then(() => {
-                            resolve(true);
+                        .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}`)
+                        .post(newEvent)
+                        .then((event: any) => {
+                            if (attachments && attachments.length > 0) {
+                                const attachmentPromises = attachments.map((attachment) => {
+                                    client
+                                        .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}/${event.id}/attachments`)
+                                        .post(attachment)
+                                })
+
+                                // Wait for all attachments to be added
+                                Promise.all(attachmentPromises)
+                                    .then(() => {
+                                        resolve(true)
+                                    })
+                                    .catch(() => {
+                                        reject(new Error('Event created but failed to add attachments'));
+                                    });
+                            } else {
+                                resolve(true);
+                            }
                         })
                         .catch(() => {
                             reject(new Error('Failed to send email'));
@@ -314,4 +305,4 @@ export class SendDocumentService implements IService {
         return base64;
     }
 }
-export default SendDocumentService.getInstance();
+export default CreateEvent.getInstance();

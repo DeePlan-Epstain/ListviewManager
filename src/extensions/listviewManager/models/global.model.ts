@@ -13,7 +13,7 @@ export type SelectedFile = {
   initiatorId: any;
   CheckoutUser: any[];
   ServerRedirectedEmbedUrl: string;
-  serverurl:{progid: string};
+  serverurl: { progid: string };
   UniqueId: string;
 };
 
@@ -56,6 +56,20 @@ export class EMailProperties {
   constructor(options: EMailProperties) {
     this.To = options.To;
     this.Cc = options.Cc;
+    this.Subject = options.Subject;
+    this.Body = options.Body;
+    this.Attachment = options.Attachment;
+  }
+}
+
+export class EventProperties {
+  public To: string;
+  public Subject: string;
+  public Body: string;
+  public Attachment?: EMailAttachment[];
+
+  constructor(options: EventProperties) {
+    this.To = options.To;
     this.Subject = options.Subject;
     this.Body = options.Body;
     this.Attachment = options.Attachment;

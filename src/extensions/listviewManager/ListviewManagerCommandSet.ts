@@ -10,7 +10,7 @@ import {
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
-import { EMailProperties, SelectedFile } from "./models/global.model";
+import { EMailProperties, EventProperties, SelectedFile } from "./models/global.model";
 import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
@@ -26,10 +26,13 @@ import LinkToCategory, { LinkToCategoryProps } from "./components/LinkToCategory
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
+import CreateEvent from "./service/createEvent.service";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
 import Swal from 'sweetalert2';
 import { ISendEMailDialogContentProps } from "./components/ExternalSharing/SendEMailDialogContent/ISendEMailDialogContentProps";
 import { SendEMailDialogContent } from "./components/ExternalSharing/SendEMailDialogContent/SendEMailDialogContent";
+import MeetingInv from "./components/MeetingInv/MeetingInv";
+import { IMeetingInvProps } from "./components/MeetingInv/IMeetingInvProps";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -82,6 +85,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // File sharing by email
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     externalSharingCompareOneCommand.visible = false;
+
+    // MeetingInv
+    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
+    meetingInvCompareOneCommand.visible = false
 
     const compareThreeCommand: Command = this.tryGetCommand("Favorites");
     compareThreeCommand.visible = true;
@@ -173,6 +180,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       //     this._renderRenameFileModal(selectedFiles[0], libraryName, libraryID);
       //   }
       //   break;
+      case "MeetingInv":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsToMeetingInv(Array.from(event.selectedRows));
+        }
+        break;
       default:
         throw new Error("Unknown command");
     }
@@ -388,6 +402,73 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
+  private async selectedRowsToMeetingInv(selectedRows: any[]): Promise<void> {
+
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+    // Retrieve user contacts
+    const contact = await this.graph.me.contacts();
+    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+
+    // Update CreateEvent properties
+    CreateEvent.EmailAddress = emails;
+    CreateEvent.fileNames = fileNames;
+    CreateEvent.fileUris = fileRefs;
+    CreateEvent.DocumentIdUrls = documentIdUrls;
+    CreateEvent.webUri = this.context.pageContext.web.absoluteUrl;
+    CreateEvent.context = this.context;
+
+    // Set MS Graph client factory
+    if (this.context && this.context.msGraphClientFactory) {
+      CreateEvent.msGraphClientFactory = this.context.msGraphClientFactory;
+    } else {
+      console.error("MSGraphClientFactory is undefined.");
+      return;
+    }
+
+    // Set server relative URL
+    const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
+    CreateEvent.ServerRelativeUrl = currentRelativeUrl;
+    console.log("CreateEvent", CreateEvent)
+    const element: React.ReactElement<IMeetingInvProps> = React.createElement(
+      MeetingInv,
+      {
+        close: this._closeDialogContainer,
+        eventProperties: new EventProperties({
+          To: "",
+          Subject: `זימון פגישה - ${CreateEvent.fileNames}`,
+          Body: "",
+        }),
+        createEvent: CreateEvent,
+        submit: () => {
+          // Clear eMailProperties values
+          new EventProperties({
+            To: "",
+            Subject: "",
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      },
+    )
+
+    ReactDom.render(element, this.dialogContainer)
+  }
 
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
@@ -400,6 +481,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
 
 
     if (compareOneCommand) {
@@ -423,6 +505,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           const fileExt = event.selectedRows[0].getValueByName(".fileType")
           if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
         } else externalSharingCompareOneCommand.visible = false;
+      }
+
+      // MeetingInv
+      if (meetingInvCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
+        } else meetingInvCompareOneCommand.visible = false;
       }
 
       if (compareSixCommand) {

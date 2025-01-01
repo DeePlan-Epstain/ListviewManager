@@ -53,15 +53,20 @@
       },
       "iconImageUrl": "./assets/imgs/favorites.svg",
       "type": "command"
-    }
-    ,
+    },
     "linkToCategory": {
       "title": {
         "default": "קישור לקטגוריה"
       },
       "iconImageUrl": "./assets/imgs/AddBtn.png",
       "type": "command"
-      
+    },
+    "MeetingInv": {
+      "title": {
+        "default": "זימון פגישה"
+      },
+      "iconImageUrl": "./assets/imgs/share.svg",
+      "type": "command"
     }
   }
 }
