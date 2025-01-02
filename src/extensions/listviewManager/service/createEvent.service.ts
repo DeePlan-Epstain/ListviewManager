@@ -173,13 +173,24 @@ export class CreateEvent implements IService {
             contentBytes: string;
         }
         // Split emails into arrays
-        const attendees: Attendee[] = eventProperties.To.split(';').map(email => {
+        let attendees: Attendee[] = eventProperties.To.split(';').map(email => {
             return {
                 emailAddress: {
                     address: email, // Email address is required
                 },
                 type: "required",
             }
+        })
+
+        // Adding the optinal attendees
+        eventProperties.optionals.split(';').forEach(email => {
+            let att = {
+                emailAddress: {
+                    address: email, // Email address is required
+                },
+                type: "optional",
+            }
+            attendees.push(att)
         })
 
 
@@ -190,24 +201,24 @@ export class CreateEvent implements IService {
                 contentBytes: attachment.ContentBytes
             }
         })
-        console.log("createEvent - attachments:", attachments)
 
         const newEvent = {
-            subject: "Quarterly Planning Meeting with Attachments",
+            subject: eventProperties.Subject,
             body: {
                 contentType: "HTML",
-                content: "Please review the attached agenda before the meeting.",
+                content: eventProperties.Body,
             },
             start: {
-                dateTime: "2025-01-01T09:00:00",
+                dateTime: eventProperties.startTime,
                 timeZone: "Asia/Jerusalem",
             },
             end: {
-                dateTime: "2025-01-01T10:00:00",
+                dateTime: eventProperties.endTime,
                 timeZone: "Asia/Jerusalem",
             },
             attendees: attendees,
-
+            isOnlineMeeting: eventProperties.onlineMeeting,
+            ...(eventProperties.onlineMeeting && { onlineMeetingProvider: "teamsForBusiness" }),
         };
 
         // Get the client from sharepoint and make an api call in his name to "MSGraphClient" in order to send the email

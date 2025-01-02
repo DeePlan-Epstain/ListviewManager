@@ -450,7 +450,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         close: this._closeDialogContainer,
         eventProperties: new EventProperties({
           To: "",
+          optionals: "",
           Subject: `זימון פגישה - ${CreateEvent.fileNames}`,
+          Date: "",
+          startTime: "",
+          endTime: "",
+          onlineMeeting: false,
           Body: "",
         }),
         createEvent: CreateEvent,
@@ -458,7 +463,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           // Clear eMailProperties values
           new EventProperties({
             To: "",
+            optionals: "",
             Subject: "",
+            Date: null,
+            startTime: "",
+            endTime: "",
+            onlineMeeting: false,
             Body: "",
           });
           // Close the dialog container

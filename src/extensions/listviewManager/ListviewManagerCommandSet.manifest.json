@@ -65,7 +65,7 @@
       "title": {
         "default": "זימון פגישה"
       },
-      "iconImageUrl": "./assets/imgs/share.svg",
+      "iconImageUrl": "./assets/imgs/event.png",
       "type": "command"
     }
   }

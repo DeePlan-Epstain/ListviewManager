@@ -9,22 +9,33 @@ import { CacheProvider } from '@emotion/react';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
-import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box, IconButton } from '@mui/material'
+import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box, IconButton, Switch } from '@mui/material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import moment, { Moment } from 'moment';
+import styles from './MeetingInv.module.scss'
 
 export interface IMeetingInvState {
     isLoading: boolean;
     DialogTitle: string;
     MailOptionTo: string;
-    MailOptionCc: string;
+    MailOptional: string;
     MailOptionSubject: string;
     MailOptionBody: string;
     SendToError: string;
-    SendCcError: string;
+    SendOptinalsError: string;
     SubjectError: string;
     SendEmailFailedError: boolean;
     succeed?: boolean;
     ESArray: string[],
     error?: Error;
+    date: Moment,
+    startTime: any,
+    endTime: any,
+    dateAndTimeError: string
+    onlineMeeting: boolean
 }
 
 export default class MeetingInv extends React.Component<IMeetingInvProps, IMeetingInvState> {
@@ -38,22 +49,28 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
         this.state = {
             isLoading: false,
             MailOptionTo: "",
-            MailOptionCc: "",
+            MailOptional: "",
             succeed: false,
             MailOptionSubject: this.props.eventProperties.Subject,
             MailOptionBody: "",
             SendToError: "",
             ESArray: [],
-            SendCcError: "",
+            SendOptinalsError: "",
             SubjectError: "",
             DialogTitle: "זימון פגישה",
             SendEmailFailedError: false,
+            date: moment(),
+            startTime: this.props.eventProperties.startTime,
+            endTime: this.props.eventProperties.endTime,
+            dateAndTimeError: "",
+            onlineMeeting: false
         };
         this._eventProperties = this.props.eventProperties;
         this._submit = this._submit.bind(this);
     }
 
     componentDidMount() {
+
         // Combine existing ESArray with Contacts from props
         const combinedContacts = [
             ...this.props.createEvent.EmailAddress,
@@ -99,6 +116,33 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
             }
         );
         this._eventProperties.To = value.join(";");
+    };
+
+    private _onChangedMailOptional = (event: React.ChangeEvent<{}>, value: string[]) => {
+        // Email validation regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Create a list to store invalid emails
+        const invalidEmails = value.filter(email => !emailRegex.test(email));
+
+        // If there are any invalid emails, set an error message
+        if (!invalidEmails.length) {
+            // Reset the error message if all emails are valid
+            this.setState({
+                SendOptinalsError: "",
+            });
+        }
+
+        // Always update the MailOptionCc value
+        this.setState(
+            {
+                MailOptional: value.join(";"),
+            },
+            () => {
+                //console.log(this.state.MailOptionCc);
+            }
+        );
+        this._eventProperties.optionals = value.join(";");
     };
 
     // Triggered every time Body is changed, set MailOptionBody(react state) and _eventProperties(Class member) to the new value and finally reset the field validation
@@ -158,19 +202,6 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
         });
     }
 
-    // Send email with Attachment
-    // private sendEMail(EventProperties: EventProperties): Promise<boolean> {
-    //     return new Promise((resolve, reject) => {
-    //         this.props.sendDocumentService.sendEMail(EventProperties)
-    //             .then(() => {
-    //                 resolve(true);
-    //             })
-    //             .catch((err: any) => {
-    //                 reject(err);
-    //             });
-    //     });
-    // }
-
     private createEvent(EventProperties: EventProperties): Promise<boolean> {
         return new Promise((resolve, reject) => {
             this.props.createEvent.createEvent(EventProperties)
@@ -193,16 +224,16 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
     // Validate the Form's fields
     private ValidateForm(EventProperties: EventProperties): boolean {
         let Validated = true;
-
+        const { date, startTime, endTime } = this.state
         // Initialize error message variables for 'To' and 'Cc'
         let toErrors: string[] = [];
-        let ccErrors: string[] = [];
+        let optionalsErrors: string[] = [];
 
         // Validate 'To' field
         if (EventProperties.To.trim() === "") {
             Validated = false;
             this.setState({
-                SendToError: "שדה 'אל' לא יכול להישאר ריק",
+                SendToError: "שדה 'משתתפים' לא יכול להישאר ריק",
             });
         } else {
             // Validate emails in 'To' field
@@ -217,9 +248,25 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
             // If there are invalid emails, set the error message
             if (toErrors.length > 0) {
                 this.setState({
-                    SendToError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'אל' שגויות: ${toErrors.join(", ")}`,
+                    SendToError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'משתתפים' שגויות: ${toErrors.join(", ")}`,
                 });
             }
+        }
+
+        // Validate 'optionals'
+        const ToArray = EventProperties.optionals.split(";");
+        for (let i = 0; i < ToArray.length; i++) {
+            const email = ToArray[i].trim();
+            if (email !== "" && !this.ValidateEmail(email)) {
+                optionalsErrors.push(email); // Collect invalid emails
+                Validated = false;
+            }
+        }
+        // If there are invalid emails, set the error message
+        if (optionalsErrors.length > 0) {
+            this.setState({
+                SendOptinalsError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'משתתפים אופציונלים' שגויות: ${optionalsErrors.join(", ")}`,
+            });
         }
 
         // Validate 'Subject' field
@@ -230,59 +277,81 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
             Validated = false;
         }
 
+        if (date.isValid() === false || (startTime === "Invalid date" || startTime === "") || (endTime === "Invalid date" || endTime === "")) {
+            this.setState({
+                dateAndTimeError: "אחד מן השדות 'תאריך', 'משעה' או 'עד שעה' ריקים"
+            })
+            Validated = false
+        } else {
+            this.setState({
+                dateAndTimeError: ""
+            })
+        }
+
         return Validated;
     }
 
+    public validationDateAndTimeOnChange() {
+        const { date, startTime, endTime } = this.state
+
+        if (date.isValid() === false || (startTime === "Invalid date" || startTime === "") || (endTime === "Invalid date" || endTime === "")) {
+            this.setState({
+                dateAndTimeError: "אחד מן השדות 'תאריך', 'משעה' או 'עד שעה' ריקים"
+            })
+        } else {
+            this.setState({
+                dateAndTimeError: ""
+            })
+        }
+    }
+
+    public formatMeetingTimeUTC = (date: any, time: any): string => {
+        const [hours, minutes] = time.split(':')
+        return moment(date)
+            .set({
+                hour: parseInt(hours),
+                minute: parseInt(minutes),
+                second: 0,
+                millisecond: 0,
+            })
+            .format('YYYY-MM-DDTHH:mm:ss');
+    };
+
     // Submit the form
     public _submit() {
+        if (this.ValidateForm(this._eventProperties)) {
 
-        // Activate spinner
-        this.setState({ isLoading: true, succeed: false });  // Reset success to false
+            const { date, startTime, endTime, onlineMeeting } = this.state
 
-        this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
-            this._eventProperties.Attachment = attachments;
-            this.createEvent(this._eventProperties)
-                .then(() => {
-                    this.setState({ succeed: true, isLoading: false });
-                    this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
-                    setTimeout(() => {
-                        this.props.close(); // Close the modal after a delay for visual feedback
-                    }, 1000);
-                })
-                .catch((err: Error) => {
-                    console.error("Send Document Error", err);
-                    this.setState({
-                        SendEmailFailedError: true,
-                        isLoading: false,
+            // Activate spinner
+            this.setState({ isLoading: true, succeed: false });  // Reset success to false
+
+            const startTimeDate = this.formatMeetingTimeUTC(date, startTime)
+            const endTimeDate = this.formatMeetingTimeUTC(date, endTime)
+
+            this._eventProperties.startTime = startTimeDate
+            this._eventProperties.endTime = endTimeDate
+            this._eventProperties.onlineMeeting = onlineMeeting
+
+            this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
+                this._eventProperties.Attachment = attachments;
+                this.createEvent(this._eventProperties)
+                    .then(() => {
+                        this.setState({ succeed: true, isLoading: false });
+                        this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
+                        setTimeout(() => {
+                            this.props.close(); // Close the modal after a delay for visual feedback
+                        }, 1000);
+                    })
+                    .catch((err: Error) => {
+                        console.error("Send Document Error", err);
+                        this.setState({
+                            SendEmailFailedError: true,
+                            isLoading: false,
+                        });
                     });
-                });
-        });
-
-        // Validate the Form
-        // if (this.ValidateForm(this._eventProperties)) {
-
-        //     // Activate spinner
-        //     this.setState({ isLoading: true, succeed: false });  // Reset success to false
-        //     // Get the Content of the file Encodes into base64 string
-        //     this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
-        //         this._eventProperties.Attachment = attachments;
-        //         this.createEvent(this._eventProperties)
-        //             .then(() => {
-        //                 this.setState({ succeed: true, isLoading: false });
-        //                 this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
-        //                 setTimeout(() => {
-        //                     this.props.close(); // Close the modal after a delay for visual feedback
-        //                 }, 1000);
-        //             })
-        //             .catch((err: Error) => {
-        //                 console.error("Send Document Error", err);
-        //                 this.setState({
-        //                     SendEmailFailedError: true,
-        //                     isLoading: false,
-        //                 });
-        //             });
-        //     });
-        // }
+            });
+        }
 
     }
 
@@ -320,9 +389,9 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                         >
                             <span id="modal-title">{this.state.DialogTitle}</span>
                             <div className="top-spacer" />
-                            <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>אל:</span>
+                            <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>משתתפים:</span>
                             <div className="top-spacerLabel" />
-                            <div className="SendDocumentContainer" dir="rtl">
+                            <div className="SendDocumentContainer" id={styles.containerSmall} dir="rtl">
                                 <Autocomplete
                                     onChange={(event, value) => this._onChangedTo(event, value)}
                                     dir="rtl"
@@ -351,34 +420,39 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                                         />
                                     )}
                                 />
-                                {/* <div className="top-spacer" />
-                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>מכותבים:</span>
-                                <div className="top-spacerLabel" /> */}
-                                {/* <Autocomplete
-                                multiple
-                                disablePortal
-                                freeSolo
-                                disabled={this.state.isLoading || this.state.succeed}
-                                ListboxProps={{ style: { maxHeight: '15rem' } }}
-                                onChange={(event, value) => this._onChangedCc(event, value)}
-                                options={this.state.ESArray}
-                                renderInput={(params: any) => (
-                                    <TextField
+                                <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>משתתפים אופציונלים:</span>
+                                <div className="top-spacerLabel" />
+                                <div className="SendDocumentContainer" dir="rtl">
+                                    <Autocomplete
+                                        onChange={(event, value) => this._onChangedMailOptional(event, value)}
                                         dir="rtl"
-                                        type="email"
-                                        {...params}
-                                        //label="מכותבים"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                padding: '0px !important',
-                                            }
-                                        }}
-                                        helperText={this.state.SendCcError ?
-                                            <span className="errorSpan">{this.state.SendCcError}</span> : < span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
-                                        }
+                                        disablePortal
+                                        multiple
+                                        freeSolo
+                                        disabled={this.state.isLoading || this.state.succeed}
+                                        options={this.state.ESArray}
+                                        ListboxProps={{ style: { maxHeight: '15rem', background: "white" } }}
+                                        renderInput={(params: any) => (
+                                            <TextField
+                                                dir="rtl"
+                                                type="email"
+                                                fullWidth
+                                                size="small"
+                                                {...params}
+                                                //label="אל"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        padding: '0px !important',
+                                                    }
+                                                }}
+                                                helperText={this.state.SendOptinalsError ?
+                                                    <span className="errorSpan">{this.state.SendOptinalsError}</span> : <span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
+                                                }
+                                            />
+                                        )}
                                     />
-                                )}
-                            /> */}
+                                </div>
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>נושא:</span>
                                 <div className="top-spacerLabel" />
@@ -396,22 +470,61 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                                     fullWidth
                                     size="small"
                                 />
+
+                                <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תאריך ושעה:</span>
+                                <div className="top-spacerLabel" style={{ paddingBottom: '1em' }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', }}>
+                                    <LocalizationProvider dateAdapter={AdapterMoment} adapterLocale="he">
+                                        <DatePicker
+                                            sx={{ paddingBottom: '1em' }}
+                                            label="תאריך"
+                                            disablePast
+                                            value={this.state.date}
+                                            onChange={(newValue: Moment) => {
+                                                this.setState({ date: moment(newValue).startOf('day') },
+                                                    () => this.validationDateAndTimeOnChange()); // Strip time component
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'row', gap: '1em' }}>
+                                            <TimePicker
+                                                ampm={false}
+                                                label="משעה"
+                                                disablePast
+                                                value={this.state.startTime ? moment(this.state.startTime, 'HH:mm') : null}
+                                                maxTime={this.state.endTime ? moment(this.state.endTime, 'HH:mm') : undefined}
+                                                onChange={(newValue: Moment) => {
+                                                    this.validationDateAndTimeOnChange()
+                                                    this.setState({ startTime: moment(newValue).format('HH:mm') },
+                                                        () => this.validationDateAndTimeOnChange()); // Ensure time in "HH:mm"
+                                                }}
+                                            />
+                                            <TimePicker
+                                                ampm={false}
+                                                label="עד שעה"
+                                                disablePast
+                                                value={this.state.endTime ? moment(this.state.endTime, 'HH:mm') : null}
+                                                minTime={this.state.startTime ? moment(this.state.startTime, 'HH:mm') : undefined}
+                                                onChange={(newValue: Moment) => {
+                                                    this.setState({ endTime: moment(newValue).format('HH:mm') },
+                                                        () => this.validationDateAndTimeOnChange()); // Ensure time in "HH:mm"
+                                                }}
+                                            />
+                                        </div>
+                                    </LocalizationProvider>
+                                    <div style={{ display: 'flex', width: '100%', paddingTop: '5px' }}>
+                                        <span className={styles.errorMessage} style={{ color: 'red' }}>{this.state.dateAndTimeError}</span>
+                                    </div>
+                                </div>
+
+                                <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>פגישה מקוונת:</span>
+                                <div className="top-spacerLabel" />
+                                <Switch onClick={() => this.setState({ onlineMeeting: !this.state.onlineMeeting })}></Switch>
+
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תוכן המייל:</span>
                                 <div className="top-spacerLabel" />
-                                {/* <TextField
-                                style={{ direction: 'rtl' }}
-                                onChange={this._onChangedBody}
-                                //label="תוכן המייל"
-                                disabled={this.state.isLoading || this.state.succeed}
-                                name="MailOptionBody"
-                                multiline
-                                minRows={3}
-                                maxRows={3}
-                                value={this.state.MailOptionBody}
-                                fullWidth
-                                size="small"
-                            /> */}
                                 <RichText
                                     value={this.state.MailOptionBody}
                                     isEditMode={!this.state.isLoading && !this.state.succeed}
