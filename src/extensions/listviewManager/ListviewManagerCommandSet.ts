@@ -10,7 +10,7 @@ import {
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
-import { SelectedFile } from "./models/global.model";
+import { EMailProperties, EventProperties, SelectedFile } from "./models/global.model";
 import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
@@ -22,13 +22,17 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
-import LinkToCategory, {LinkToCategoryProps} from "./components/LinkToCategory/LinkToCategory";
+import LinkToCategory, { LinkToCategoryProps } from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
-import SendEMailDialog from "./components/ExternalSharing/SendEMailDialog/SendEMailDialog";
+import CreateEvent from "./service/createEvent.service";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
 import Swal from 'sweetalert2';
+import { ISendEMailDialogContentProps } from "./components/ExternalSharing/SendEMailDialogContent/ISendEMailDialogContentProps";
+import { SendEMailDialogContent } from "./components/ExternalSharing/SendEMailDialogContent/SendEMailDialogContent";
+import MeetingInv from "./components/MeetingInv/MeetingInv";
+import { IMeetingInvProps } from "./components/MeetingInv/IMeetingInvProps";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -81,6 +85,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // File sharing by email
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     externalSharingCompareOneCommand.visible = false;
+
+    // MeetingInv
+    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
+    meetingInvCompareOneCommand.visible = false
 
     const compareThreeCommand: Command = this.tryGetCommand("Favorites");
     compareThreeCommand.visible = true;
@@ -141,12 +149,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       case "convertToPDF":
         ConvertToPdf(this.context, selectedFiles[0]);
         Swal.fire({
-            title: "בקשתך נקלטה בהצלחה",
-            text: "המרת הקובץ תחל בשניות הקרובות",
-            icon: "success",
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading(); // Show loading spinner
+          title: "בקשתך נקלטה בהצלחה",
+          text: "המרת הקובץ תחל בשניות הקרובות",
+          icon: "success",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading(); // Show loading spinner
 
           },
         });
@@ -158,7 +166,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // Check if the user selected some items
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
-          await this.selectedRowsToShareDocumets(Array.from(event.selectedRows));
+          await this.selectedRowsToShareDocuments(Array.from(event.selectedRows));
         }
         break;
       case "Favorites":
@@ -172,6 +180,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       //     this._renderRenameFileModal(selectedFiles[0], libraryName, libraryID);
       //   }
       //   break;
+      case "MeetingInv":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsToMeetingInv(Array.from(event.selectedRows));
+        }
+        break;
       default:
         throw new Error("Unknown command");
     }
@@ -318,7 +333,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-  private async selectedRowsToShareDocumets(selectedRows: any[]): Promise<void> {
+  private async selectedRowsToShareDocuments(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
@@ -359,9 +374,110 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
     SendDocumentService.ServerRelativeUrl = currentRelativeUrl;
 
-    // Create and display the email dialog
-    const dialog: SendEMailDialog = new SendEMailDialog(SendDocumentService);
-    await dialog.show();
+    const element: React.ReactElement<ISendEMailDialogContentProps> = React.createElement(
+      SendEMailDialogContent,
+      {
+        close: this._closeDialogContainer,
+        eMailProperties: new EMailProperties({
+          To: "",
+          Cc: "",
+          Subject: `שיתוף מסמך - ${SendDocumentService.fileNames}`,
+          Body: "",
+        }),
+        sendDocumentService: SendDocumentService,
+        submit: () => {
+          // Clear eMailProperties values
+          new EMailProperties({
+            To: "",
+            Cc: "",
+            Subject: "",
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      }
+    );
+
+    ReactDom.render(element, this.dialogContainer);
+  }
+
+  private async selectedRowsToMeetingInv(selectedRows: any[]): Promise<void> {
+
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+    // Retrieve user contacts
+    const contact = await this.graph.me.contacts();
+    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+
+    // Update CreateEvent properties
+    CreateEvent.EmailAddress = emails;
+    CreateEvent.fileNames = fileNames;
+    CreateEvent.fileUris = fileRefs;
+    CreateEvent.DocumentIdUrls = documentIdUrls;
+    CreateEvent.webUri = this.context.pageContext.web.absoluteUrl;
+    CreateEvent.context = this.context;
+
+    // Set MS Graph client factory
+    if (this.context && this.context.msGraphClientFactory) {
+      CreateEvent.msGraphClientFactory = this.context.msGraphClientFactory;
+    } else {
+      console.error("MSGraphClientFactory is undefined.");
+      return;
+    }
+
+    // Set server relative URL
+    const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
+    CreateEvent.ServerRelativeUrl = currentRelativeUrl;
+    console.log("CreateEvent", CreateEvent)
+    const element: React.ReactElement<IMeetingInvProps> = React.createElement(
+      MeetingInv,
+      {
+        close: this._closeDialogContainer,
+        eventProperties: new EventProperties({
+          To: "",
+          optionals: "",
+          Subject: `זימון פגישה - ${CreateEvent.fileNames}`,
+          Date: "",
+          startTime: "",
+          endTime: "",
+          onlineMeeting: false,
+          Body: "",
+        }),
+        createEvent: CreateEvent,
+        submit: () => {
+          // Clear eMailProperties values
+          new EventProperties({
+            To: "",
+            optionals: "",
+            Subject: "",
+            Date: null,
+            startTime: "",
+            endTime: "",
+            onlineMeeting: false,
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      },
+    )
+
+    ReactDom.render(element, this.dialogContainer)
   }
 
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
@@ -375,56 +491,64 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
     const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
 
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
     }
 
-    if(compareThreeCommand){
-      compareThreeCommand.visible = event.selectedRows?.length === 1;      
-    // if there is only one selected item and its a file and its a file type that can be converted to pdf
-    if (compareFiveCommand) {
-      console.log("selected item: ", event.selectedRows[0]);
-      compareFiveCommand.visible = event.selectedRows?.length === 1 
-      && event.selectedRows[0]?.getValueByName('FSObjType') == 0
-      && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
+    if (compareThreeCommand) {
+      compareThreeCommand.visible = event.selectedRows?.length === 1;
+      // if there is only one selected item and its a file and its a file type that can be converted to pdf
+      if (compareFiveCommand) {
+        console.log("selected item: ", event.selectedRows[0]);
+        compareFiveCommand.visible = event.selectedRows?.length === 1
+          && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+          && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
         // event.selectedRows[0].getValueByName("fileSize") > 0;
-    }
+      }
 
-    // if there is one selected item or more and its a file
-    if (externalSharingCompareOneCommand) {
-      if (event.selectedRows?.length > 0) {
-        const fileExt = event.selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-      } else externalSharingCompareOneCommand.visible = false;
-      console.log(event.selectedRows[0]);
+      // if there is one selected item or more and its a file
+      if (externalSharingCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+        } else externalSharingCompareOneCommand.visible = false;
+      }
       
+      // MeetingInv
+      if (meetingInvCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
+        } else meetingInvCompareOneCommand.visible = false;
+      }
+
+      if (compareSixCommand) {
+        compareSixCommand.visible = event.selectedRows?.length >= 1;
+      }
+
+      // if (compareThreeCommand) {
+      //   if (event.selectedRows?.length > 0) {
+      //     const isFolder = Boolean(
+      //       event.selectedRows.find(
+      //         (r) => r.getValueByName("ContentType") === "Folder"
+      //       )
+      //     );
+      //     compareThreeCommand.visible = !isFolder;
+      //   } else compareThreeCommand.visible = false;
+      // }
+
+      // if (compareFourCommand) {
+      //   compareFourCommand.visible = event.selectedRows?.length === 1;
+      // }
+
+      // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+      // if (compareTwoCommand) {
+      //   compareTwoCommand.visible = event.selectedRows?.length === 1;
+      // }
     }
-
-    if (compareSixCommand) {
-      compareSixCommand.visible = event.selectedRows?.length >= 1;
-    }
-
-    // if (compareThreeCommand) {
-    //   if (event.selectedRows?.length > 0) {
-    //     const isFolder = Boolean(
-    //       event.selectedRows.find(
-    //         (r) => r.getValueByName("ContentType") === "Folder"
-    //       )
-    //     );
-    //     compareThreeCommand.visible = !isFolder;
-    //   } else compareThreeCommand.visible = false;
-    // }
-
-    // if (compareFourCommand) {
-    //   compareFourCommand.visible = event.selectedRows?.length === 1;
-    // }
-
-    // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    // if (compareTwoCommand) {
-    //   compareTwoCommand.visible = event.selectedRows?.length === 1;
-    // }
   }
 }
 }

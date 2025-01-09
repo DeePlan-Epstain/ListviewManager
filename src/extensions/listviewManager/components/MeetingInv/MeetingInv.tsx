@@ -1,50 +1,79 @@
-import * as React from "react";
-import "./SendEMailDialogContent.css";
-import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box, IconButton } from '@mui/material'
-import { ISendEMailDialogContentProps } from "./ISendEMailDialogContentProps";
-import { EMailProperties, EMailAttachment } from "../../../models/global.model";
-import { ISendEMailDialogContentState } from "./ISendEMailDialogContentState";
-import { jss } from "../../../models/jss";
-import { cacheRtl } from "../../../models/cacheRtl";
+import * as React from 'react';
+import { EMailAttachment, EventProperties } from '../../models/global.model';
+import { IMeetingInvProps } from './IMeetingInvProps';
+import { jss } from "../../models/jss";
+import { cacheRtl } from "../../models/cacheRtl";
 import { StylesProvider } from '@material-ui/core/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CacheProvider } from '@emotion/react';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
-export class SendEMailDialogContent extends React.Component<ISendEMailDialogContentProps, ISendEMailDialogContentState> {
-    private _eMailProperties: EMailProperties;
+import { Modal, Button, CircularProgress, TextField, Autocomplete, Snackbar, Alert, Box, IconButton, Switch } from '@mui/material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import moment, { Moment } from 'moment';
+import styles from './MeetingInv.module.scss'
+
+export interface IMeetingInvState {
+    isLoading: boolean;
+    DialogTitle: string;
+    MailOptionTo: string;
+    MailOptional: string;
+    MailOptionSubject: string;
+    MailOptionBody: string;
+    SendToError: string;
+    SendOptinalsError: string;
+    SubjectError: string;
+    SendEmailFailedError: boolean;
+    succeed?: boolean;
+    ESArray: string[],
+    error?: Error;
+    date: Moment,
+    startTime: any,
+    endTime: any,
+    dateAndTimeError: string
+    onlineMeeting: boolean
+}
+
+export default class MeetingInv extends React.Component<IMeetingInvProps, IMeetingInvState> {
+
+    private _eventProperties: EventProperties;
     private copiedFileUri: string[];
 
-    constructor(props: any) {
+    constructor(props: IMeetingInvProps) {
         super(props);
-        // Set States (information managed within the component), When state changes, the component responds by re-rendering
+
         this.state = {
             isLoading: false,
             MailOptionTo: "",
-            MailOptionCc: "",
+            MailOptional: "",
             succeed: false,
-            MailOptionSubject: this.props.eMailProperties.Subject,
+            MailOptionSubject: this.props.eventProperties.Subject,
             MailOptionBody: "",
             SendToError: "",
             ESArray: [],
-            SendCcError: "",
+            SendOptinalsError: "",
             SubjectError: "",
-            DialogTitle: "שיתוף מסמך / מסמכים עם משתמשים חיצוניים",
+            DialogTitle: "זימון פגישה",
             SendEmailFailedError: false,
+            date: moment(),
+            startTime: this.props.eventProperties.startTime,
+            endTime: this.props.eventProperties.endTime,
+            dateAndTimeError: "",
+            onlineMeeting: false
         };
-        this._eMailProperties = this.props.eMailProperties;
+        this._eventProperties = this.props.eventProperties;
         this._submit = this._submit.bind(this);
     }
 
     componentDidMount() {
-        // Check local storage for existing ESArray during the initial mount
-        const existingESArray = JSON.parse(localStorage.getItem("ESArray") || "[]");
 
         // Combine existing ESArray with Contacts from props
         const combinedContacts = [
-            ...existingESArray,
-            ...this.props.sendDocumentService.EmailAddress,
+            ...this.props.createEvent.EmailAddress,
         ];
 
         // Update ESArray state with unique contacts from local storage and props
@@ -58,7 +87,7 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
             MailOptionSubject: e.target.value,
             SubjectError: "",
         });
-        this._eMailProperties.Subject = e.target.value;
+        this._eventProperties.Subject = e.target.value;
     };
 
     private _onChangedTo = (event: React.ChangeEvent<{}>, value: string[]) => {
@@ -86,10 +115,10 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                 //console.log(this.state.MailOptionTo);
             }
         );
-        this._eMailProperties.To = value.join(";");
+        this._eventProperties.To = value.join(";");
     };
 
-    private _onChangedCc = (event: React.ChangeEvent<{}>, value: string[]) => {
+    private _onChangedMailOptional = (event: React.ChangeEvent<{}>, value: string[]) => {
         // Email validation regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -100,36 +129,36 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         if (!invalidEmails.length) {
             // Reset the error message if all emails are valid
             this.setState({
-                SendCcError: "",
+                SendOptinalsError: "",
             });
         }
 
         // Always update the MailOptionCc value
         this.setState(
             {
-                MailOptionCc: value.join(";"),
+                MailOptional: value.join(";"),
             },
             () => {
                 //console.log(this.state.MailOptionCc);
             }
         );
-        this._eMailProperties.Cc = value.join(";");
+        this._eventProperties.optionals = value.join(";");
     };
 
-    // Triggered every time Body is changed, set MailOptionBody(react state) and _eMailProperties(Class member) to the new value and finally reset the field validation
+    // Triggered every time Body is changed, set MailOptionBody(react state) and _eventProperties(Class member) to the new value and finally reset the field validation
     private htmlToPlainText(html: any) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = html;
         return tempElement.innerText;
     }
 
-    // Triggered every time Body is changed, set MailOptionBody(react state) and _eMailProperties(Class member) to the new value and finally reset the field validation
+    // Triggered every time Body is changed, set MailOptionBody(react state) and _eventProperties(Class member) to the new value and finally reset the field validation
     private _onChangedBody = (newValue: string): string => {
         const plainText = this.htmlToPlainText(newValue);
         this.setState({
             MailOptionBody: newValue,
         });
-        this._eMailProperties.Body = newValue;
+        this._eventProperties.Body = newValue;
         return newValue;
     };
 
@@ -137,26 +166,26 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
     // Returns EMailAttachment object which contains the file name and its Content Encodes into base64 string
     private getEMailAttachment(): Promise<EMailAttachment[]> {
         return new Promise((resolve, reject) => {
-            const { sendDocumentService } = this.props;
+            const { createEvent } = this.props;
 
             // Initialize an empty array to store the copied file URIs
             let copiedFileUris: string[] = [];
 
-            Promise.all(sendDocumentService.fileUris.map((fileUri: any, index: any) =>
-                sendDocumentService.CopyFileAndCleanMetadata(
+            Promise.all(createEvent.fileUris.map((fileUri: any, index: any) =>
+                createEvent.CopyFileAndCleanMetadata(
                     [fileUri],
-                    [sendDocumentService.fileNames[index]],
-                    [sendDocumentService.DocumentIdUrls[index]],
-                    sendDocumentService.ServerRelativeUrl
+                    [createEvent.fileNames[index]],
+                    [createEvent.DocumentIdUrls[index]],
+                    createEvent.ServerRelativeUrl
                 ).then(async (copiedFileUri: string[]) => {
                     // Add the copied file URIs to the array
                     copiedFileUris = copiedFileUris.concat(copiedFileUri);
 
-                    return sendDocumentService.getFileContentAsBase64(copiedFileUri).then((fileContent: string[]) => {
+                    return createEvent.getFileContentAsBase64(copiedFileUri).then((fileContent: string[]) => {
                         const contentBytes = Array.isArray(fileContent) ? fileContent.join('') : fileContent;
 
                         return new EMailAttachment({
-                            FileName: sendDocumentService.fileNames[index],
+                            FileName: createEvent.fileNames[index],
                             ContentBytes: contentBytes,
                         });
                     });
@@ -173,17 +202,16 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
         });
     }
 
-    // Send email with Attachment
-    private sendEMail(eMailProperties: EMailProperties): Promise<boolean> {
+    private createEvent(EventProperties: EventProperties): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this.props.sendDocumentService.sendEMail(eMailProperties)
+            this.props.createEvent.createEvent(EventProperties)
                 .then(() => {
                     resolve(true);
                 })
                 .catch((err: any) => {
                     reject(err);
                 });
-        });
+        })
     }
 
     // Validates one email format  
@@ -194,22 +222,22 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
     };
 
     // Validate the Form's fields
-    private ValidateForm(eMailProperties: EMailProperties): boolean {
+    private ValidateForm(EventProperties: EventProperties): boolean {
         let Validated = true;
-
+        const { date, startTime, endTime } = this.state
         // Initialize error message variables for 'To' and 'Cc'
         let toErrors: string[] = [];
-        let ccErrors: string[] = [];
+        let optionalsErrors: string[] = [];
 
         // Validate 'To' field
-        if (eMailProperties.To.trim() === "") {
+        if (EventProperties.To.trim() === "") {
             Validated = false;
             this.setState({
-                SendToError: "שדה 'אל' לא יכול להישאר ריק",
+                SendToError: "שדה 'משתתפים' לא יכול להישאר ריק",
             });
         } else {
             // Validate emails in 'To' field
-            const ToArray = eMailProperties.To.split(";");
+            const ToArray = EventProperties.To.split(";");
             for (let i = 0; i < ToArray.length; i++) {
                 const email = ToArray[i].trim();
                 if (email !== "" && !this.ValidateEmail(email)) {
@@ -220,58 +248,102 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
             // If there are invalid emails, set the error message
             if (toErrors.length > 0) {
                 this.setState({
-                    SendToError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'אל' שגויות: ${toErrors.join(", ")}`,
+                    SendToError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'משתתפים' שגויות: ${toErrors.join(", ")}`,
                 });
             }
         }
 
-        // Validate 'Cc' field
-        if (eMailProperties.Cc.trim() !== "") {
-            const CcArray = eMailProperties.Cc.split(";");
-            for (let i = 0; i < CcArray.length; i++) {
-                const email = CcArray[i].trim();
-                if (email !== "" && !this.ValidateEmail(email)) {
-                    ccErrors.push(email); // Collect invalid emails
-                    Validated = false;
-                }
+        // Validate 'optionals'
+        const ToArray = EventProperties.optionals.split(";");
+        for (let i = 0; i < ToArray.length; i++) {
+            const email = ToArray[i].trim();
+            if (email !== "" && !this.ValidateEmail(email)) {
+                optionalsErrors.push(email); // Collect invalid emails
+                Validated = false;
             }
-            // If there are invalid emails, set the error message
-            if (ccErrors.length > 0) {
-                this.setState({
-                    SendCcError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'מכותבים' שגויות: ${ccErrors.join(", ")}`,
-                });
-            }
+        }
+        // If there are invalid emails, set the error message
+        if (optionalsErrors.length > 0) {
+            this.setState({
+                SendOptinalsError: `אחת או יותר מכתובות הדואר האלקטרוני ב-'משתתפים אופציונלים' שגויות: ${optionalsErrors.join(", ")}`,
+            });
         }
 
         // Validate 'Subject' field
-        if (eMailProperties.Subject.trim() === "") {
+        if (EventProperties.Subject.trim() === "") {
             this.setState({
                 SubjectError: "שדה 'נושא' לא יכול להישאר ריק",
             });
             Validated = false;
         }
 
+        if (date.isValid() === false || (startTime === "Invalid date" || startTime === "") || (endTime === "Invalid date" || endTime === "")) {
+            this.setState({
+                dateAndTimeError: "אחד מן השדות 'תאריך', 'משעה' או 'עד שעה' ריקים"
+            })
+            Validated = false
+        } else {
+            this.setState({
+                dateAndTimeError: ""
+            })
+        }
+
         return Validated;
     }
 
+    public validationDateAndTimeOnChange() {
+        const { date, startTime, endTime } = this.state
+
+        if (date.isValid() === false || (startTime === "Invalid date" || startTime === "") || (endTime === "Invalid date" || endTime === "")) {
+            this.setState({
+                dateAndTimeError: "אחד מן השדות 'תאריך', 'משעה' או 'עד שעה' ריקים"
+            })
+        } else {
+            this.setState({
+                dateAndTimeError: ""
+            })
+        }
+    }
+
+    public formatMeetingTimeUTC = (date: any, time: any): string => {
+        const [hours, minutes] = time.split(':')
+        return moment(date)
+            .set({
+                hour: parseInt(hours),
+                minute: parseInt(minutes),
+                second: 0,
+                millisecond: 0,
+            })
+            .format('YYYY-MM-DDTHH:mm:ss');
+    };
+
     // Submit the form
-    private _submit() {
-        // Validate the Form
-        if (this.ValidateForm(this._eMailProperties)) {
+    public _submit() {
+        if (this.ValidateForm(this._eventProperties)) {
+
+            const { date, startTime, endTime, onlineMeeting } = this.state
+
             // Activate spinner
             this.setState({ isLoading: true, succeed: false });  // Reset success to false
-            // Get the Content of the file Encodes into base64 string
+
+            const startTimeDate = this.formatMeetingTimeUTC(date, startTime)
+            const endTimeDate = this.formatMeetingTimeUTC(date, endTime)
+
+            this._eventProperties.startTime = startTimeDate
+            this._eventProperties.endTime = endTimeDate
+            this._eventProperties.onlineMeeting = onlineMeeting
+
             this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
-                this._eMailProperties.Attachment = attachments;
-                this.sendEMail(this._eMailProperties)
+                this._eventProperties.Attachment = attachments;
+                this.createEvent(this._eventProperties)
                     .then(() => {
                         this.setState({ succeed: true, isLoading: false });
-                        this.props.sendDocumentService.DeleteCopiedFile(this.copiedFileUri);
+                        this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
                         setTimeout(() => {
                             this.props.close(); // Close the modal after a delay for visual feedback
                         }, 1000);
                     })
-                    .catch((err) => {
+                    .catch((err: Error) => {
                         console.error("Send Document Error", err);
                         this.setState({
                             SendEmailFailedError: true,
@@ -280,10 +352,10 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                     });
             });
         }
+
     }
 
-    public render(): React.ReactElement<ISendEMailDialogContentProps> {
-
+    public render() {
         return (
             <CacheProvider value={cacheRtl}>
                 <StylesProvider jss={jss}>
@@ -317,9 +389,9 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                         >
                             <span id="modal-title">{this.state.DialogTitle}</span>
                             <div className="top-spacer" />
-                            <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>אל:</span>
+                            <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>משתתפים:</span>
                             <div className="top-spacerLabel" />
-                            <div className="SendDocumentContainer" dir="rtl">
+                            <div className="SendDocumentContainer" id={styles.containerSmall} dir="rtl">
                                 <Autocomplete
                                     onChange={(event, value) => this._onChangedTo(event, value)}
                                     dir="rtl"
@@ -342,7 +414,6 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                                     padding: '0px !important',
                                                 }
                                             }}
-                                            required={true}
                                             helperText={this.state.SendToError ?
                                                 <span className="errorSpan">{this.state.SendToError}</span> : <span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
                                             }
@@ -350,33 +421,38 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     )}
                                 />
                                 <div className="top-spacer" />
-                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>מכותבים:</span>
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "0px 2px" }}>משתתפים אופציונלים:</span>
                                 <div className="top-spacerLabel" />
-                                <Autocomplete
-                                    multiple
-                                    disablePortal
-                                    freeSolo
-                                    disabled={this.state.isLoading || this.state.succeed}
-                                    ListboxProps={{ style: { maxHeight: '15rem' } }}
-                                    onChange={(event, value) => this._onChangedCc(event, value)}
-                                    options={this.state.ESArray}
-                                    renderInput={(params: any) => (
-                                        <TextField
-                                            dir="rtl"
-                                            type="email"
-                                            {...params}
-                                            //label="מכותבים"
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    padding: '0px !important',
+                                <div className="SendDocumentContainer" dir="rtl">
+                                    <Autocomplete
+                                        onChange={(event, value) => this._onChangedMailOptional(event, value)}
+                                        dir="rtl"
+                                        disablePortal
+                                        multiple
+                                        freeSolo
+                                        disabled={this.state.isLoading || this.state.succeed}
+                                        options={this.state.ESArray}
+                                        ListboxProps={{ style: { maxHeight: '15rem', background: "white" } }}
+                                        renderInput={(params: any) => (
+                                            <TextField
+                                                dir="rtl"
+                                                type="email"
+                                                fullWidth
+                                                size="small"
+                                                {...params}
+                                                //label="אל"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        padding: '0px !important',
+                                                    }
+                                                }}
+                                                helperText={this.state.SendOptinalsError ?
+                                                    <span className="errorSpan">{this.state.SendOptinalsError}</span> : <span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
                                                 }
-                                            }}
-                                            helperText={this.state.SendCcError ?
-                                                <span className="errorSpan">{this.state.SendCcError}</span> : < span>לאחר הקלדת אימייל, לחץ על מקש Enter.</span>
-                                            }
-                                        />
-                                    )}
-                                />
+                                            />
+                                        )}
+                                    />
+                                </div>
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>נושא:</span>
                                 <div className="top-spacerLabel" />
@@ -394,22 +470,61 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                                     fullWidth
                                     size="small"
                                 />
+
+                                <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תאריך ושעה:</span>
+                                <div className="top-spacerLabel" style={{ paddingBottom: '1em' }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', }}>
+                                    <LocalizationProvider dateAdapter={AdapterMoment} adapterLocale="he">
+                                        <DatePicker
+                                            sx={{ paddingBottom: '1em' }}
+                                            label="תאריך"
+                                            disablePast
+                                            value={this.state.date}
+                                            onChange={(newValue: Moment) => {
+                                                this.setState({ date: moment(newValue).startOf('day') },
+                                                    () => this.validationDateAndTimeOnChange()); // Strip time component
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'row', gap: '1em' }}>
+                                            <TimePicker
+                                                ampm={false}
+                                                label="משעה"
+                                                disablePast
+                                                value={this.state.startTime ? moment(this.state.startTime, 'HH:mm') : null}
+                                                maxTime={this.state.endTime ? moment(this.state.endTime, 'HH:mm') : undefined}
+                                                onChange={(newValue: Moment) => {
+                                                    this.validationDateAndTimeOnChange()
+                                                    this.setState({ startTime: moment(newValue).format('HH:mm') },
+                                                        () => this.validationDateAndTimeOnChange()); // Ensure time in "HH:mm"
+                                                }}
+                                            />
+                                            <TimePicker
+                                                ampm={false}
+                                                label="עד שעה"
+                                                disablePast
+                                                value={this.state.endTime ? moment(this.state.endTime, 'HH:mm') : null}
+                                                minTime={this.state.startTime ? moment(this.state.startTime, 'HH:mm') : undefined}
+                                                onChange={(newValue: Moment) => {
+                                                    this.setState({ endTime: moment(newValue).format('HH:mm') },
+                                                        () => this.validationDateAndTimeOnChange()); // Ensure time in "HH:mm"
+                                                }}
+                                            />
+                                        </div>
+                                    </LocalizationProvider>
+                                    <div style={{ display: 'flex', width: '100%', paddingTop: '5px' }}>
+                                        <span className={styles.errorMessage} style={{ color: 'red' }}>{this.state.dateAndTimeError}</span>
+                                    </div>
+                                </div>
+
+                                <div className="top-spacer" />
+                                <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>פגישה מקוונת:</span>
+                                <div className="top-spacerLabel" />
+                                <Switch onClick={() => this.setState({ onlineMeeting: !this.state.onlineMeeting })}></Switch>
+
                                 <div className="top-spacer" />
                                 <span style={{ fontWeight: 600, letterSpacing: ".02rem", padding: "5px 0px" }}>תוכן המייל:</span>
                                 <div className="top-spacerLabel" />
-                                {/* <TextField
-                                    style={{ direction: 'rtl' }}
-                                    onChange={this._onChangedBody}
-                                    //label="תוכן המייל"
-                                    disabled={this.state.isLoading || this.state.succeed}
-                                    name="MailOptionBody"
-                                    multiline
-                                    minRows={3}
-                                    maxRows={3}
-                                    value={this.state.MailOptionBody}
-                                    fullWidth
-                                    size="small"
-                                /> */}
                                 <RichText
                                     value={this.state.MailOptionBody}
                                     isEditMode={!this.state.isLoading && !this.state.succeed}
@@ -462,7 +577,6 @@ export class SendEMailDialogContent extends React.Component<ISendEMailDialogCont
                     </Modal>
                 </StylesProvider>
             </CacheProvider >
-
         );
     }
 }
