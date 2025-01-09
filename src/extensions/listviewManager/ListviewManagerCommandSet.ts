@@ -516,7 +516,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
         } else externalSharingCompareOneCommand.visible = false;
       }
-
+      
       // MeetingInv
       if (meetingInvCompareOneCommand) {
         if (event.selectedRows?.length > 0) {
@@ -550,4 +550,5 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       // }
     }
   }
+}
 }

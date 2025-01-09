@@ -58,7 +58,7 @@
       "title": {
         "default": "קישור לקטגוריה"
       },
-      "iconImageUrl": "./assets/imgs/AddBtn.png",
+      "iconImageUrl": "./assets/imgs/shortcut.svg",
       "type": "command"
     },
     "MeetingInv": {
