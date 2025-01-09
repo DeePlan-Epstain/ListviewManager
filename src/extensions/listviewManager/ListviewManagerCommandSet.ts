@@ -551,4 +551,3 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 }
-}
