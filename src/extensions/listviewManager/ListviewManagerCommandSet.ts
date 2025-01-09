@@ -398,6 +398,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         const fileExt = event.selectedRows[0].getValueByName(".fileType")
         if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
       } else externalSharingCompareOneCommand.visible = false;
+      console.log(event.selectedRows[0]);
+      
     }
 
     if (compareSixCommand) {
@@ -424,4 +426,5 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     //   compareTwoCommand.visible = event.selectedRows?.length === 1;
     // }
   }
+}
 }
