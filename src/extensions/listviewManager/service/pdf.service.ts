@@ -1,5 +1,5 @@
 import { SelectedFile } from "../models/global.model";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { SPFI, SPFx } from "@pnp/sp";
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
 import PAService, { PaUrls } from "./authService.service";
@@ -42,7 +42,6 @@ export async function ConvertToPdf(context: ListViewCommandSetContext, selectedI
         }
         const data = await paService.post(PaUrls.CONVERT_TO_PDF, requestBody);
         // if(data?.ok)
-        console.log("output: ", data);
         Swal.fire({
             title: "הפעולה בוצעה בהצלחה!",
             text: "הקובץ הומר לPDF בהצלחה",
@@ -50,12 +49,20 @@ export async function ConvertToPdf(context: ListViewCommandSetContext, selectedI
           });
     }
     catch (error) {
-        console.log("an error found: ", error);
-        Swal.fire({
-            icon: "error",
-            title: "שגיאה",
-            text: Errors.CONVERT_TO_PDF_FAILED,
-          });
+        if(error.response && error.response.status === 400){
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: Errors.CONVERT_TO_PDF_FAILED_EMPTY_EXCEL,
+            });
+        }
+        else if(error.response && error.response.status === 401){
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: Errors.CONVERT_TO_PDF_FAILED_ALREADY_EXIST,
+            });
+        }
     }
 }
 

@@ -58,7 +58,7 @@ export default class ExportZipModal extends React.Component<ExportZipModalProps,
         const archive = await exportToZip(this.props.selectedItems, this.props.context);
         Swal.fire({
             title: "יצירת הקובץ בוצעה בהצלחה",
-            text: "ההורדה תחל בשניות הקרובות",
+            text: "הקובץ ישמר בתיקייה בשניות הקרובות",
             icon: "success",
         });
         saveZipToSharePoint(archive, this.props.selectedItems, this.props.sp);

@@ -9,7 +9,10 @@
   "scripts": {
     "clean": "gulp clean",
     "test": "gulp test",
-    "build": " npm run clean && npm run bundle && npm run package-solution && npm run open-explorer"
+    "build": "npm run clean && npm run bundle && npm run package-solution && npm run open-explorer",
+    "bundle": "gulp bundle --ship",
+    "package-solution": "gulp package-solution --ship",
+    "open-explorer": "start .\\sharepoint\\solution"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
