@@ -96,8 +96,6 @@ export default function LinkToCategory({
 
       // Upload the file
       const result = await sp.web.getFolderByServerRelativePath(targetLibraryUrl).files.addUsingPath(fileName, fileBlob, { Overwrite: true });
-
-      console.log(`Result of link creation: ${JSON.stringify(result)}`);
     } catch (error) {
       console.error("Error creating link file:", error);
     }

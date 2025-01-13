@@ -90,9 +90,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
     meetingInvCompareOneCommand.visible = false
 
-    const compareThreeCommand: Command = this.tryGetCommand("Favorites");
-    compareThreeCommand.visible = true;
-
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
@@ -168,9 +165,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToShareDocuments(Array.from(event.selectedRows));
         }
-        break;
-      case "Favorites":
-        window.open("https://epstin100-my.sharepoint.com/favorites");
         break;
       // case "Move_File":
       //   this._renderMoveFileModal(selectedFiles);
@@ -502,7 +496,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       compareThreeCommand.visible = event.selectedRows?.length === 1;
       // if there is only one selected item and its a file and its a file type that can be converted to pdf
       if (compareFiveCommand) {
-        console.log("selected item: ", event.selectedRows[0]);
         compareFiveCommand.visible = event.selectedRows?.length === 1
           && event.selectedRows[0]?.getValueByName('FSObjType') == 0
           && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&

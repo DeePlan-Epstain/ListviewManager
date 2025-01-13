@@ -47,13 +47,6 @@
       "iconImageUrl": "./assets/imgs/share.svg",
       "type": "command"
     },
-    "Favorites": {
-      "title": {
-        "default": "המועדפים שלי"
-      },
-      "iconImageUrl": "./assets/imgs/favorites.svg",
-      "type": "command"
-    },
     "linkToCategory": {
       "title": {
         "default": "קישור לקטגוריה"

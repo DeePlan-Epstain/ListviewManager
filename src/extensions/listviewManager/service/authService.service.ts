@@ -44,7 +44,6 @@ export default class PAService {
                 }
             );
 
-            console.log('data:', data)
             return Promise.resolve(data);
         } catch (err) {
             return Promise.reject(err);
