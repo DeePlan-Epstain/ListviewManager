@@ -214,15 +214,6 @@
     box-shadow: 0px 0px 12px 7px rgba(200, 200, 200, 0.8) inset;
   }
 }
-
-/* .gb_aj_ada2ac09> :last-child:not(.ig_aj_ada2ac09) {
-  display: none !important;
-}
-
-.hb_al_9f38462c {
-  display: none !important;
-} */
-
 .error {
   color: red;
 }
@@ -245,5 +236,5 @@
   justify-content: space-evenly;
 }
 .modal-body {
-  margin: 20px 30px;
+  margin: 9px 30px;
 }
