@@ -61,10 +61,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     this.graph = getGraph(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
 
-    this.currUser = await this.sp.web.currentUser();
-    if (!this.allowedUsers.includes(this.currUser.Email.toLocaleLowerCase())) {
-      this.startDnDBlock();
-    }
     this.dialogContainer = document.body.appendChild(
       document.createElement("div")
     );
@@ -184,21 +180,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       default:
         throw new Error("Unknown command");
     }
-  }
-  private startDnDBlock() {
-    const dropZoneArea = document.querySelectorAll("[role=presentation]");
-    const testArr: Element[] = [];
-
-    dropZoneArea.forEach((dz) => {
-      if (
-        dz.className.includes("root") &&
-        dz.className.includes("absolute") &&
-        dz.attributes.getNamedItem("data-drop-target-key")
-      )
-        testArr.push(dz);
-    });
-
-    testArr[0].addEventListener("drop", this.preventFolderDrop, false);
   }
 
   private preventFolderDrop(event: DragEvent): void {
