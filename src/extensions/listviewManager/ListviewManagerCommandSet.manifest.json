@@ -60,6 +60,13 @@
       },
       "iconImageUrl": "./assets/imgs/event.png",
       "type": "command"
+    },
+    "draft": {
+      "title": {
+        "default": "טיוטה"
+      },
+      "iconImageUrl": "./assets/imgs/event.png",
+      "type": "command"
     }
   }
 }
