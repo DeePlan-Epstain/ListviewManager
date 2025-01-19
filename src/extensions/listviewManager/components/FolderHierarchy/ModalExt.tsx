@@ -44,8 +44,8 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
             NewFolderNameValidate: false,
             success: false,
             FoldersHierarchyAfterChoosingDivision: [],
-            DivisionValidate:false,
-            Division:""
+            DivisionValidate: false,
+            Division: ""
         }
     }
 
@@ -71,13 +71,13 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
         try {
 
             const listFolders = await this._spWithCustomUrl.web.lists.getById("430ade62-95d9-4540-99bd-e834dc4f55b5")
-            .rootFolder.folders
-            .select("Name", "ListItemAllFields/unit") // ציון השדות שברצונך לקבל
-            .expand("ListItemAllFields") // הרחבה כדי לקבל את המטה-דאטה
-            ();
-            
-            
-            
+                .rootFolder.folders
+                .select("Name", "ListItemAllFields/unit") // ציון השדות שברצונך לקבל
+                .expand("ListItemAllFields") // הרחבה כדי לקבל את המטה-דאטה
+                ();
+
+
+
 
             let listFoldersNoForms = listFolders.filter((folder: any) => folder.Name !== "Forms");
 
@@ -116,14 +116,14 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                     NewFolderName: this.state.NewFolderName,
 
                 };
-                const response =  fetch(flowUrl, {
+                const response = fetch(flowUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestBody)
                 });
-//                const data = await response.json();
+                //                const data = await response.json();
 
                 this.setState({ isSave: false, success: true });
 
@@ -188,8 +188,8 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
         this.setState({
             isSave: false,
             success: false,
-                        DivisionValidate:false,
-            Division:"",
+            DivisionValidate: false,
+            Division: "",
             FolderHierarchy: {},
             FolderHierarchyValidate: false,
             NewFolderName: "",
@@ -220,9 +220,9 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
     };
 
     AfterChoosingDivision = (value: any) => {
-       
-        this.setState({FoldersHierarchyAfterChoosingDivision:this.state.FoldersHierarchy.filter((folders:any)=>{ return folders.ListItemAllFields.unit === value}),Division:value,DivisionValidate:false})
-        
+
+        this.setState({ FoldersHierarchyAfterChoosingDivision: this.state.FoldersHierarchy.filter((folders: any) => { return folders.ListItemAllFields.unit === value }), Division: value, DivisionValidate: false })
+
     }
 
     public render(): React.ReactElement<ModalExtProps> {
@@ -234,132 +234,132 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                     <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
                         <div style={{ display: "flex", justifyContent: "center", flexDirection: "column" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
                             {!this.state.success &&
-                            <>
-                            <div className="modal-header" >
-                                <h2 style={{ margin: 1 }}>יצירת היררכית תיקיות</h2>
-                            </div>
+                                <>
+                                    <div className="modal-header" >
+                                        <h2 style={{ margin: 1 }}>יצירת היררכית תיקיות</h2>
+                                    </div>
 
-                                <div className="modal-body">
-                                <Autocomplete
-                                        id="country-select-demo"
-                                        onChange={(event, newValue) => {
-                                            
+                                    <div className="modal-body">
+                                        <Autocomplete
+                                            id="country-select-demo"
+                                            onChange={(event, newValue) => {
 
-                                            this.AfterChoosingDivision(newValue)
-                            
-                                        }}
-                                        value={this.state.Division || ""}
-                                        options={Array.from(
-                                            new Set(
-                                                this.state.FoldersHierarchy
-                                                    .filter(folder => folder.ListItemAllFields.unit) // מסנן ערכים ריקים
-                                                    .map(folder => folder.ListItemAllFields.unit)    // ממפה את היחידה
-                                            )
-                                        )} 
+
+                                                this.AfterChoosingDivision(newValue)
+
+                                            }}
+                                            value={this.state.Division || ""}
+                                            options={Array.from(
+                                                new Set(
+                                                    this.state.FoldersHierarchy
+                                                        .filter(folder => folder.ListItemAllFields.unit) // מסנן ערכים ריקים
+                                                        .map(folder => folder.ListItemAllFields.unit)    // ממפה את היחידה
+                                                )
+                                            )}
                                             renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                variant="outlined"
-                                                size="small"
-                                                label="בחר חטיבה"
-                                                fullWidth
-                                                error={this.state.DivisionValidate}
+                                                <TextField
+                                                    {...params}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    label="בחר חטיבה"
+                                                    fullWidth
+                                                    error={this.state.DivisionValidate}
 
-                                            />
-                                        )}
-                                    />
-                                    <Autocomplete
-                                        id="country-select-demo"
-                                        onChange={(event, newValue) => {
-                                            console.log(newValue);
+                                                />
+                                            )}
+                                        />
+                                        <Autocomplete
+                                            id="country-select-demo"
+                                            onChange={(event, newValue) => {
+                                                console.log(newValue);
 
-                                            let s = this.state.FoldersHierarchy.find((folder) => folder.Name === newValue)
+                                                let s = this.state.FoldersHierarchy.find((folder) => folder.Name === newValue)
 
 
-                                            this.setState({ FolderHierarchy: s, FolderHierarchyValidate: false });
-                                        }}
-                                        value={this.state.FolderHierarchy?.Name || ""}
-                                        options={this.state.FoldersHierarchyAfterChoosingDivision.map((folder) => folder.Name)}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                variant="outlined"
-                                                size="small"
-                                                label="בחר היררכית תיקיות"
-                                                fullWidth
-                                                error={this.state.FolderHierarchyValidate}
-                                                style={{ marginTop: '16px' }}
+                                                this.setState({ FolderHierarchy: s, FolderHierarchyValidate: false });
+                                            }}
+                                            value={this.state.FolderHierarchy?.Name || ""}
+                                            options={this.state.FoldersHierarchyAfterChoosingDivision.map((folder) => folder.Name)}
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    label="בחר היררכית תיקיות"
+                                                    fullWidth
+                                                    error={this.state.FolderHierarchyValidate}
+                                                    style={{ marginTop: '16px' }}
 
-                                            />
-                                        )}
-                                    />
-                                    <TextField
-                                        name="NewFolderName"
-                                        error={this.state.NewFolderNameValidate}
-                                        helperText={
-                                            this.state.NewFolderNameValidate
-                                                ? "שם התיקייה אינו יכול לכלול תווים כמו \\ / : * ? \" < > |"
-                                                : ""
+                                                />
+                                            )}
+                                        />
+                                        <TextField
+                                            name="NewFolderName"
+                                            error={this.state.NewFolderNameValidate}
+                                            helperText={
+                                                this.state.NewFolderNameValidate
+                                                    ? "שם התיקייה אינו יכול לכלול תווים כמו \\ / : * ? \" < > |"
+                                                    : ""
+                                            }
+
+                                            onChange={this.onchange}
+                                            value={this.state.NewFolderName}
+                                            className="text-field"
+                                            id="outlined-basic"
+                                            variant="outlined"
+                                            label="שם התיקיה"
+                                            size="small"
+                                            fullWidth
+                                            style={{ marginTop: '16px' }}
+                                        />
+                                        <div style={{ fontSize: 12, textAlign: "right", direction: "rtl", marginTop: 7 }}>
+                                            *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
+                                        </div>
+                                    </div>
+
+
+                                    <div className={modalStyles.modalFooter} style={{ padding: "0 24%" }}>
+                                        <Button
+                                            disabled={this.state.isSave}
+                                            onClick={this.closeModal}
+                                            style={{ color: 'red' }}
+                                            startIcon={<CloseIcon style={{ color: "#f58383", paddingLeft: 0, margin: "0px !important" }} />}
+                                        >
+                                            ביטול
+                                        </Button>
+                                        <Button
+                                            style={{ color: '#1976d2' }}
+                                            disabled={this.state.isSave}
+                                            onClick={this.createFolder}
+                                            endIcon={<CheckIcon style={{ color: this.state.isSave ? 'inherit' : '#1976d2', margin: "0px" }} />}
+                                        >
+                                            אישור
+                                        </Button>
+                                    </div>
+                                    <div>
+                                        {this.state.isSave &&
+                                            <Box sx={{ display: 'flex', justifyContent: "center", margin: 10 }}>
+                                                <CircularProgress />
+                                            </Box>
                                         }
 
-                                        onChange={this.onchange}
-                                        value={this.state.NewFolderName}
-                                        className="text-field"
-                                        id="outlined-basic"
-                                        variant="outlined"
-                                        label="שם התיקיה"
-                                        size="small"
-                                        fullWidth
-                                        style={{ marginTop: '16px' }}
-                                    />
-                                    <div style={{ fontSize: 12, textAlign: "right", direction: "rtl", marginTop: 7 }}>
-                                        *יש לבחור את סוג ההיררכיה ואת שם התיקיה החדשה
                                     </div>
+                                </>
+                            }
+                            {this.state.success &&
+                                <div style={{
+                                    fontSize: '19px',
+                                    textAlign: 'center',
+                                    direction: 'rtl',
+                                    marginTop: '10px',
+                                    padding: '10px',
+                                    color: 'green',
+                                    borderRadius: '5px',
+                                }}>
+                                    ✅ הבקשה התקבלה בהצלחה! התיקייה תיווצר בעוד מספר דקות שם הפרויקט יתעדכן בסיום התהליך.
                                 </div>
-                           
 
-                            <div className={modalStyles.modalFooter} style={{ padding: "0 24%" }}>
-                                <Button
-                                    disabled={this.state.isSave}
-                                    onClick={this.closeModal}
-                                    style={{ color: 'red' }}
-                                    startIcon={<CloseIcon style={{ color: "#f58383", paddingLeft: 0, margin: "0px !important" }} />}
-                                >
-                                    ביטול
-                                </Button>
-                                <Button
-                                    style={{ color: '#1976d2' }}
-                                    disabled={this.state.isSave}
-                                    onClick={this.createFolder}
-                                    endIcon={<CheckIcon style={{ color: this.state.isSave ? 'inherit' : '#1976d2', margin: "0px" }} />}
-                                >
-                                    אישור
-                                </Button>
-                            </div>
-                            <div>
-                                {this.state.isSave &&
-                                    <Box sx={{ display: 'flex', justifyContent: "center", margin: 10 }}>
-                                        <CircularProgress />
-                                    </Box>
-                                }
-
-                            </div>
-                            </>
-                    }
-                    {this.state.success &&
-                        <div style={{
-                            fontSize: '19px',
-                            textAlign: 'center',
-                            direction: 'rtl',
-                            marginTop: '10px',
-                            padding: '10px',
-                            color: 'green',
-                            borderRadius: '5px',
-                        }}>
-                            ✅ הבקשה התקבלה בהצלחה! התיקייה תיווצר בעוד מספר דקות.
-                        </div>
-
-                    }
+                            }
                         </div >
                     </div >
                 </ThemeProvider>
