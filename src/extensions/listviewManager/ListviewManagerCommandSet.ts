@@ -60,6 +60,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
     this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
+    this.currUser = await this.sp.web.currentUser();
 
     this.dialogContainer = document.body.appendChild(
       document.createElement("div")
@@ -95,6 +96,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     return Promise.resolve();
   }
 
+  
   public async onExecute(event: IListViewCommandSetExecuteEventParameters): Promise<void> {
 
     const fullUrl = window.location.href;
