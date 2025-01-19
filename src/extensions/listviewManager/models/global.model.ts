@@ -86,24 +86,12 @@ export class EventProperties {
   }
 }
 export class DraftProperties {
-  public To: string;
-  public optionals: string;
   public Subject: string;
-  public Date: string;
-  public startTime: string;
-  public endTime: string;
-  public onlineMeeting: boolean;
   public Body: string;
   public Attachment?: EMailAttachment[];
 
   constructor(options: DraftProperties) {
-    this.To = options.To;
-    this.optionals = options.optionals
     this.Subject = options.Subject;
-    this.Date = options.Date;
-    this.startTime = options.startTime;
-    this.endTime = options.endTime;
-    this.onlineMeeting = options.onlineMeeting;
     this.Body = options.Body;
     this.Attachment = options.Attachment;
   }

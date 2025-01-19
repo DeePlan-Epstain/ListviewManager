@@ -12,23 +12,9 @@ import moment, { Moment } from 'moment';
 
 export interface IDraftState {
     isLoading: boolean;
-    DialogTitle: string;
-    MailOptionTo: string;
-    MailOptional: string;
-    MailOptionSubject: string;
-    MailOptionBody: string;
-    SendToError: string;
-    SendOptinalsError: string;
-    SubjectError: string;
     SendEmailFailedError: boolean;
     succeed?: boolean;
-    ESArray: string[],
     error?: Error;
-    date: Moment,
-    startTime: any,
-    endTime: any,
-    dateAndTimeError: string
-    onlineMeeting: boolean
 }
 
 export default class Draft extends React.Component<IDraftProps, IDraftState> {
@@ -41,22 +27,8 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
 
         this.state = {
             isLoading: false,
-            MailOptionTo: "",
-            MailOptional: "",
             succeed: false,
-            MailOptionSubject: this.props.draftProperties.Subject,
-            MailOptionBody: "",
-            SendToError: "",
-            ESArray: [],
-            SendOptinalsError: "",
-            SubjectError: "",
-            DialogTitle: "זימון פגישה",
             SendEmailFailedError: false,
-            date: moment(),
-            startTime: this.props.draftProperties.startTime,
-            endTime: this.props.draftProperties.endTime,
-            dateAndTimeError: "",
-            onlineMeeting: false
         };
         this._draftProperties = this.props.draftProperties;
         this._submit = this._submit.bind(this);

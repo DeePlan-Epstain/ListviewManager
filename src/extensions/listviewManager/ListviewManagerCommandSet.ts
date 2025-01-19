@@ -516,26 +516,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       {
         close: this._closeDialogContainer,
         draftProperties: new DraftProperties({
-          To: "",
-          optionals: "",
           Subject: `טיוטה - ${CreateDraft.fileNames}`,
-          Date: "",
-          startTime: "",
-          endTime: "",
-          onlineMeeting: false,
           Body: "",
         }),
         createDraft: CreateDraft,
         submit: () => {
           // Clear eMailProperties values
           new DraftProperties({
-            To: "",
-            optionals: "",
             Subject: "",
-            Date: null,
-            startTime: "",
-            endTime: "",
-            onlineMeeting: false,
             Body: "",
           });
           // Close the dialog container
