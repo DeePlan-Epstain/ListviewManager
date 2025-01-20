@@ -96,7 +96,7 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
             this._draftProperties.Attachment = attachments;
             this.createDraft(this._draftProperties)
                 .then(async (draftId: string) => {
-                    console.log(".then - draftId:", draftId)
+
                     // await this.openInOutlook(draftId)
                     this.setState({ succeed: true, isLoading: false });
                     this.props.createDraft.DeleteCopiedFile(this.copiedFileUri);
@@ -116,22 +116,22 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
     }
 
     private async openInOutlook(draftId: string): Promise<void> {
-        console.log('Opening draft email');
+        console.log('Opening draft email in Outlook Desktop');
 
-        // Construct the Outlook Desktop URL
-        const outlookDesktopUrl = `https://outlook.office.com/mail/deeplink/compose/${draftId}`;
+        // Construct the Outlook Desktop URL using the draft ID
+        const outlookDesktopUrl = `outlook://message/${draftId}`;
 
-        // Check if the desktop protocol is supported
         try {
             // Attempt to open the desktop URL
-            window.open(outlookDesktopUrl, '_blank');
+            window.location.href = outlookDesktopUrl;
 
             console.log('Attempting to open in Outlook Desktop:', outlookDesktopUrl);
         } catch (error) {
             console.error('Failed to open in Outlook Desktop:', error);
-
+            alert('Unable to open the email in Outlook Desktop. Please ensure Outlook is installed and the protocol is supported.');
         }
     }
+
 
     public render() {
         return (
