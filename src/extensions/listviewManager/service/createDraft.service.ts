@@ -53,34 +53,38 @@ export class CreateDraft implements IService {
     }
 
     // Delete the temporary file which was a copy of the original file after he did his purpose (created in order to clean the original file metadata)  
-    public DeleteCopiedFile(FileUrisToDelete: string[]): Promise<boolean> {
-        const sp = getSP(this.context);
-        return new Promise((resolve, reject) => {
-            // Create an array of promises for each file deletion
-            const deletePromises = FileUrisToDelete.map((fileUri) =>
-                sp.web.getFileByUrl(fileUri)
-                    .getItem()
-                    .then((item: any) => item.delete())
-                    .catch((err: string) => {
-                        console.error(`Error deleting file ${fileUri}:`, err);
-                        return false;
-                    })
-            );
+    public async DeleteCopiedFile(FileUrisToDelete: string[]): Promise<boolean> {
 
-            // Wait for all delete promises to finish
-            Promise.all(deletePromises)
-                .then((results) => {
-                    // If all files were successfully deleted, resolve with true
-                    if (results.every((result: boolean) => result === true)) {
-                        resolve(true);
-                    } else {
-                        reject(new Error('Some files could not be deleted'));
+        const sp = getSP(this.context);
+
+        try {
+            // Process each file deletion asynchronously
+            const deleteResults = await Promise.all(
+                FileUrisToDelete.map(async (fileUri) => {
+                    try {
+                        const item = await sp.web.getFileByUrl(fileUri).getItem();
+                        await item.delete();
+                        console.log(`Successfully deleted file: ${fileUri}`);
+                        return true;
+                    } catch (error) {
+                        console.error(`Error deleting file ${fileUri}:`, error);
+                        return false; // Return false for failed deletions
                     }
                 })
-                .catch((err: any) => {
-                    reject(err); // Handle any unexpected errors
-                });
-        });
+            );
+
+            // Check if all deletions were successful
+            if (deleteResults.every((result) => result)) {
+                console.log("All files successfully deleted");
+                return true;
+            } else {
+                console.warn("Some files could not be deleted");
+                return false;
+            }
+        } catch (unexpectedError) {
+            console.error("Unexpected error during file deletions:", unexpectedError);
+            throw new Error("An unexpected error occurred while deleting files");
+        }
     }
 
     // Copy the file into a mediator Document library in order to clean its metadata
@@ -192,7 +196,7 @@ export class CreateDraft implements IService {
                         .post(draftPayload)
                         .then((draft: any) => {
                             // Return the draft ID
-                            window.open(draft.webLink, '_blank');
+                            window.location.href = draft.webLink
                             resolve(draft.id);
                         })
                         .catch((error: any) => {

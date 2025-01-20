@@ -53,35 +53,40 @@ export class CreateEvent implements IService {
     }
 
     // Delete the temporary file which was a copy of the original file after he did his purpose (created in order to clean the original file metadata)  
-    public DeleteCopiedFile(FileUrisToDelete: string[]): Promise<boolean> {
-        const sp = getSP(this.context);
-        return new Promise((resolve, reject) => {
-            // Create an array of promises for each file deletion
-            const deletePromises = FileUrisToDelete.map((fileUri) =>
-                sp.web.getFileByUrl(fileUri)
-                    .getItem()
-                    .then((item: any) => item.delete())
-                    .catch((err: string) => {
-                        console.error(`Error deleting file ${fileUri}:`, err);
-                        return false;
-                    })
-            );
+    public async DeleteCopiedFile(FileUrisToDelete: string[]): Promise<boolean> {
 
-            // Wait for all delete promises to finish
-            Promise.all(deletePromises)
-                .then((results) => {
-                    // If all files were successfully deleted, resolve with true
-                    if (results.every((result: boolean) => result === true)) {
-                        resolve(true);
-                    } else {
-                        reject(new Error('Some files could not be deleted'));
+        const sp = getSP(this.context);
+
+        try {
+            // Process each file deletion asynchronously
+            const deleteResults = await Promise.all(
+                FileUrisToDelete.map(async (fileUri) => {
+                    try {
+                        const item = await sp.web.getFileByUrl(fileUri).getItem();
+                        await item.delete();
+                        console.log(`Successfully deleted file: ${fileUri}`);
+                        return true;
+                    } catch (error) {
+                        console.error(`Error deleting file ${fileUri}:`, error);
+                        return false; // Return false for failed deletions
                     }
                 })
-                .catch((err: any) => {
-                    reject(err); // Handle any unexpected errors
-                });
-        });
+            );
+
+            // Check if all deletions were successful
+            if (deleteResults.every((result) => result)) {
+                console.log("All files successfully deleted");
+                return true;
+            } else {
+                console.warn("Some files could not be deleted");
+                return false;
+            }
+        } catch (unexpectedError) {
+            console.error("Unexpected error during file deletions:", unexpectedError);
+            throw new Error("An unexpected error occurred while deleting files");
+        }
     }
+
 
     // Copy the file into a mediator Document library in order to clean its metadata
     public CopyFileAndCleanMetadata(fileUris: string[], fileNames: string[], DocumentIdUrls: string[], ServerRelativeUrl: string): Promise<string[]> {
@@ -158,7 +163,11 @@ export class CreateEvent implements IService {
 
     // Send the email with its content
     public createEvent(eventProperties: EventProperties): Promise<boolean | Error> {
-
+        type Attachment = {
+            "@odata.type": string;
+            name: string;
+            contentBytes: string;
+        }
         type Attendee = {
             emailAddress: {
                 address: string;
@@ -166,34 +175,6 @@ export class CreateEvent implements IService {
             },
             type: string;
         }
-
-        type Attachment = {
-            "@odata.type": string;
-            name: string;
-            contentBytes: string;
-        }
-        // Split emails into arrays
-        let attendees: Attendee[] = eventProperties.To.split(';').map(email => {
-            return {
-                emailAddress: {
-                    address: email, // Email address is required
-                },
-                type: "required",
-            }
-        })
-
-        // Adding the optinal attendees
-        eventProperties.optionals.split(';').forEach(email => {
-            let att = {
-                emailAddress: {
-                    address: email, // Email address is required
-                },
-                type: "optional",
-            }
-            attendees.push(att)
-        })
-
-
         const attachments: Attachment[] = eventProperties.Attachment.map(attachment => {
             return {
                 "@odata.type": "#microsoft.graph.fileAttachment",
@@ -202,62 +183,159 @@ export class CreateEvent implements IService {
             }
         })
 
+        const now = new Date();
+        const currentDate = now.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
         const newEvent = {
-            subject: eventProperties.Subject,
+            subject: "Untitled Meeting",
             body: {
                 contentType: "HTML",
-                content: eventProperties.Body,
+                content: "Fill me.",
             },
             start: {
-                dateTime: eventProperties.startTime,
-                timeZone: "Asia/Jerusalem",
+                dateTime: `${currentDate}T16:00:00`, // Start time: 4:00 PM
+                timeZone: "UTC",
             },
             end: {
-                dateTime: eventProperties.endTime,
-                timeZone: "Asia/Jerusalem",
-            },
-            attendees: attendees,
-            isOnlineMeeting: eventProperties.onlineMeeting,
-            ...(eventProperties.onlineMeeting && { onlineMeetingProvider: "teamsForBusiness" }),
+                dateTime: `${currentDate}T17:00:00`, // End time: 5:00 PM
+                timeZone: "UTC",
+            }
         };
 
-        // Get the client from sharepoint and make an api call in his name to "MSGraphClient" in order to send the email
+        return this.createEventWithAttachments(newEvent, attachments)
+
+        // // Split emails into arrays
+        // let attendees: Attendee[] = eventProperties.To.split(';').map(email => {
+        //     return {
+        //         emailAddress: {
+        //             address: email, // Email address is required
+        //         },
+        //         type: "required",
+        //     }
+        // })
+
+        // // Adding the optinal attendees
+        // eventProperties.optionals.split(';').forEach(email => {
+        //     let att = {
+        //         emailAddress: {
+        //             address: email, // Email address is required
+        //         },
+        //         type: "optional",
+        //     }
+        //     attendees.push(att)
+        // })
+
+
+        // const attachments: Attachment[] = eventProperties.Attachment.map(attachment => {
+        //     return {
+        //         "@odata.type": "#microsoft.graph.fileAttachment",
+        //         name: attachment.FileName,
+        //         contentBytes: attachment.ContentBytes
+        //     }
+        // })
+
+        // const newEvent = {
+        //     subject: eventProperties.Subject,
+        //     body: {
+        //         contentType: "HTML",
+        //         content: eventProperties.Body,
+        //     },
+        //     start: {
+        //         dateTime: eventProperties.startTime,
+        //         timeZone: "Asia/Jerusalem",
+        //     },
+        //     end: {
+        //         dateTime: eventProperties.endTime,
+        //         timeZone: "Asia/Jerusalem",
+        //     },
+        //     attendees: attendees,
+        //     isOnlineMeeting: eventProperties.onlineMeeting,
+        //     ...(eventProperties.onlineMeeting && { onlineMeetingProvider: "teamsForBusiness" }),
+        // };
+
+        // // Get the client from sharepoint and make an api call in his name to "MSGraphClient" in order to send the email
+        // return new Promise((resolve, reject) => {
+        //     this.msGraphClientFactory
+        //         .getClient('3')
+        //         .then((client: MSGraphClientV3) => {
+        //             client
+        //                 .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}`)
+        //                 .post(newEvent)
+        //                 .then((event: any) => {
+        //                     if (attachments && attachments.length > 0) {
+        //                         const attachmentPromises = attachments.map((attachment) => {
+        //                             client
+        //                                 .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}/${event.id}/attachments`)
+        //                                 .post(attachment)
+        //                         })
+
+        //                         // Wait for all attachments to be added
+        //                         Promise.all(attachmentPromises)
+        //                             .then(() => {
+        //                                 resolve(true)
+        //                             })
+        //                             .catch(() => {
+        //                                 reject(new Error('Event created but failed to add attachments'));
+        //                             });
+        //                     } else {
+        //                         resolve(true);
+        //                     }
+        //                 })
+        //                 .catch(() => {
+        //                     reject(new Error('Failed to send email'));
+        //                 });
+        //         })
+        //         .catch((error) => {
+        //             reject(new Error('Failed to get Graph client'));
+        //         });
+        // });
+    }
+
+    public createEventWithAttachments(newEvent: any, attachments?: any[]): Promise<boolean | Error> {
         return new Promise((resolve, reject) => {
             this.msGraphClientFactory
                 .getClient('3')
                 .then((client: MSGraphClientV3) => {
+                    // Create the event
                     client
                         .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}`)
                         .post(newEvent)
                         .then((event: any) => {
+                            // If there are attachments, add them to the event
                             if (attachments && attachments.length > 0) {
                                 const attachmentPromises = attachments.map((attachment) => {
-                                    client
+                                    return client
                                         .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}/${event.id}/attachments`)
-                                        .post(attachment)
-                                })
+                                        .post(attachment);
+                                });
 
                                 // Wait for all attachments to be added
                                 Promise.all(attachmentPromises)
                                     .then(() => {
-                                        resolve(true)
+
+                                        // window.open(event.webLink, '_blank');
+                                        window.location.href = event.webLink
+                                        resolve(true); // Resolve if everything succeeds
                                     })
                                     .catch(() => {
                                         reject(new Error('Event created but failed to add attachments'));
                                     });
                             } else {
-                                resolve(true);
+                                resolve(true); // Resolve if no attachments
                             }
                         })
-                        .catch(() => {
-                            reject(new Error('Failed to send email'));
+                        .catch((error: any) => {
+                            console.error("Failed to create event:", error);
+                            reject(new Error('Failed to create event'));
                         });
                 })
-                .catch((error) => {
+                .catch((error: any) => {
+                    console.error("Failed to get Graph client:", error);
                     reject(new Error('Failed to get Graph client'));
                 });
         });
     }
+
 
     /**
      *  PRIVATE METHODS
