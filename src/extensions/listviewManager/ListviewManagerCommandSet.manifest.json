@@ -63,9 +63,9 @@
     },
     "draft": {
       "title": {
-        "default": "טיוטה"
+        "default": "שיתוף קובץ במייל"
       },
-      "iconImageUrl": "./assets/imgs/event.png",
+      "iconImageUrl": "./assets/imgs/share.svg",
       "type": "command"
     }
   }

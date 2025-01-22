@@ -96,7 +96,7 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
             this._draftProperties.Attachment = attachments;
             this.createDraft(this._draftProperties)
                 .then(async (draftId: string) => {
-
+                    // window.location.href = draft.webLink
                     // await this.openInOutlook(draftId)
                     this.setState({ succeed: true, isLoading: false });
                     this.props.createDraft.DeleteCopiedFile(this.copiedFileUri);

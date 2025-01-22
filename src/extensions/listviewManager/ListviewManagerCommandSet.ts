@@ -545,7 +545,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
-    const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
     const draftCompareOneCommand: Command = this.tryGetCommand('draft')
 
@@ -563,13 +563,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // event.selectedRows[0].getValueByName("fileSize") > 0;
       }
 
-      // if there is one selected item or more and its a file
-      if (externalSharingCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType")
-          if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-        } else externalSharingCompareOneCommand.visible = false;
-      }
+      // // if there is one selected item or more and its a file
+      // if (externalSharingCompareOneCommand) {
+      //   if (event.selectedRows?.length > 0) {
+      //     const fileExt = event.selectedRows[0].getValueByName(".fileType")
+      //     if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+      //   } else externalSharingCompareOneCommand.visible = false;
+      // }
 
       // MeetingInv
       if (meetingInvCompareOneCommand) {

@@ -312,9 +312,8 @@ export class CreateEvent implements IService {
                                 // Wait for all attachments to be added
                                 Promise.all(attachmentPromises)
                                     .then(() => {
-
-                                        // window.open(event.webLink, '_blank');
-                                        window.location.href = event.webLink
+                                        const editModeUrl = `https://outlook.office365.com/calendar/deeplink/compose/${encodeURIComponent(event.id)}`
+                                        window.location.href = editModeUrl
                                         resolve(true); // Resolve if everything succeeds
                                     })
                                     .catch(() => {

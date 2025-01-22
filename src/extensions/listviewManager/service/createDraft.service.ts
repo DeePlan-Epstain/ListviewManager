@@ -186,6 +186,16 @@ export class CreateDraft implements IService {
             attachments, // Include attachments here (supported for drafts)
         };
 
+        function buildEditModeUrl(itemId: string) {
+            // Base URL for Outlook Web App
+            const baseUrl = "https://outlook.office365.com/mail/deeplink/compose/";
+
+            // Construct the URL for edit mode
+            const editUrl = `${baseUrl}${encodeURIComponent(itemId)}?exvsurl=1&popoutv2=1`;
+
+            return editUrl;
+        }
+
         // Use the MSGraphClient to create the draft
         return new Promise((resolve, reject) => {
             this.msGraphClientFactory
@@ -195,8 +205,15 @@ export class CreateDraft implements IService {
                         .api('/me/messages') // Endpoint to create draft
                         .post(draftPayload)
                         .then((draft: any) => {
+                            console.log(".then - draft:", draft)
                             // Return the draft ID
-                            window.location.href = draft.webLink
+
+                            if (draft.webLink) {
+                                const editModeUrl = buildEditModeUrl(draft.id);
+                                window.location.href = editModeUrl;
+                            } else {
+                                console.error("Draft does not have a valid webLink.");
+                            }
                             resolve(draft.id);
                         })
                         .catch((error: any) => {
