@@ -3,13 +3,13 @@ import {
     MSGraphClientV3
 } from '@microsoft/sp-http';
 import { Constants } from '../models/Constants';
-import { EventProperties } from '../models/global.model';
-import { IService } from '../components/MeetingInv/models/IService';
+import { DraftProperties } from '../models/global.model';
+import { IService } from '../components/Draft/models/IService';
 import { getSP } from "../../../pnpjs-config";
 import { SPFI } from '@pnp/sp';
 
 
-export class CreateEvent implements IService {
+export class CreateDraft implements IService {
     public context: any;
     public webUri: string;
     public msGraphClientFactory: MSGraphClientFactory;
@@ -19,7 +19,7 @@ export class CreateEvent implements IService {
     public ServerRelativeUrl: string;
     public EmailAddress: any;
     private sp: SPFI;
-    private static instance: CreateEvent;
+    private static instance: CreateDraft;
 
     // private constructor(context?: any) {
     //     this.context = context;
@@ -28,10 +28,10 @@ export class CreateEvent implements IService {
 
     // Return the same object if not changed or a new one
     public static getInstance() {
-        if (!CreateEvent.instance) {
-            CreateEvent.instance = new CreateEvent();
+        if (!CreateDraft.instance) {
+            CreateDraft.instance = new CreateDraft();
         }
-        return CreateEvent.instance;
+        return CreateDraft.instance;
     }
 
     /**
@@ -86,7 +86,6 @@ export class CreateEvent implements IService {
             throw new Error("An unexpected error occurred while deleting files");
         }
     }
-
 
     // Copy the file into a mediator Document library in order to clean its metadata
     public CopyFileAndCleanMetadata(fileUris: string[], fileNames: string[], DocumentIdUrls: string[], ServerRelativeUrl: string): Promise<string[]> {
@@ -162,170 +161,64 @@ export class CreateEvent implements IService {
     }
 
     // Send the email with its content
-    public createEvent(eventProperties: EventProperties): Promise<boolean | Error> {
+    public createDraft(draftProperties: DraftProperties): Promise<string | Error> {
+
         type Attachment = {
             "@odata.type": string;
             name: string;
             contentBytes: string;
-        }
-        type Attendee = {
-            emailAddress: {
-                address: string;
-                name?: string;
-            },
-            type: string;
-        }
-        const attachments: Attachment[] = eventProperties.Attachment.map(attachment => {
-            return {
-                "@odata.type": "#microsoft.graph.fileAttachment",
-                name: attachment.FileName,
-                contentBytes: attachment.ContentBytes
-            }
-        })
-
-        const now = new Date();
-        const currentDate = now.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-
-        const newEvent = {
-            subject: "Untitled Meeting",
-            body: {
-                contentType: "HTML",
-                content: "Fill me.",
-            },
-            start: {
-                dateTime: `${currentDate}T16:00:00`, // Start time: 4:00 PM
-                timeZone: "UTC",
-            },
-            end: {
-                dateTime: `${currentDate}T17:00:00`, // End time: 5:00 PM
-                timeZone: "UTC",
-            }
         };
 
-        return this.createEventWithAttachments(newEvent, attachments)
+        // Create attachments
+        const attachments: Attachment[] = draftProperties.Attachment.map(attachment => ({
+            "@odata.type": "#microsoft.graph.fileAttachment",
+            name: attachment.FileName,
+            contentBytes: attachment.ContentBytes,
+        }));
 
-        // // Split emails into arrays
-        // let attendees: Attendee[] = eventProperties.To.split(';').map(email => {
-        //     return {
-        //         emailAddress: {
-        //             address: email, // Email address is required
-        //         },
-        //         type: "required",
-        //     }
-        // })
+        // Draft payload
+        const draftPayload = {
+            subject: draftProperties.Subject || "Draft Email with Attachment",
+            body: {
+                contentType: "HTML",
+                content: draftProperties.Body || "Please find the attached file.",
+            },
+            attachments, // Include attachments here (supported for drafts)
+        };
 
-        // // Adding the optinal attendees
-        // eventProperties.optionals.split(';').forEach(email => {
-        //     let att = {
-        //         emailAddress: {
-        //             address: email, // Email address is required
-        //         },
-        //         type: "optional",
-        //     }
-        //     attendees.push(att)
-        // })
+        function buildEditModeUrl(itemId: string) {
+            // Base URL for Outlook Web App
+            const baseUrl = "https://outlook.office365.com/mail/deeplink/compose/";
 
+            // Construct the URL for edit mode
+            const editUrl = `${baseUrl}${encodeURIComponent(itemId)}?exvsurl=1&popoutv2=1`;
 
-        // const attachments: Attachment[] = eventProperties.Attachment.map(attachment => {
-        //     return {
-        //         "@odata.type": "#microsoft.graph.fileAttachment",
-        //         name: attachment.FileName,
-        //         contentBytes: attachment.ContentBytes
-        //     }
-        // })
+            return editUrl;
+        }
 
-        // const newEvent = {
-        //     subject: eventProperties.Subject,
-        //     body: {
-        //         contentType: "HTML",
-        //         content: eventProperties.Body,
-        //     },
-        //     start: {
-        //         dateTime: eventProperties.startTime,
-        //         timeZone: "Asia/Jerusalem",
-        //     },
-        //     end: {
-        //         dateTime: eventProperties.endTime,
-        //         timeZone: "Asia/Jerusalem",
-        //     },
-        //     attendees: attendees,
-        //     isOnlineMeeting: eventProperties.onlineMeeting,
-        //     ...(eventProperties.onlineMeeting && { onlineMeetingProvider: "teamsForBusiness" }),
-        // };
-
-        // // Get the client from sharepoint and make an api call in his name to "MSGraphClient" in order to send the email
-        // return new Promise((resolve, reject) => {
-        //     this.msGraphClientFactory
-        //         .getClient('3')
-        //         .then((client: MSGraphClientV3) => {
-        //             client
-        //                 .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}`)
-        //                 .post(newEvent)
-        //                 .then((event: any) => {
-        //                     if (attachments && attachments.length > 0) {
-        //                         const attachmentPromises = attachments.map((attachment) => {
-        //                             client
-        //                                 .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}/${event.id}/attachments`)
-        //                                 .post(attachment)
-        //                         })
-
-        //                         // Wait for all attachments to be added
-        //                         Promise.all(attachmentPromises)
-        //                             .then(() => {
-        //                                 resolve(true)
-        //                             })
-        //                             .catch(() => {
-        //                                 reject(new Error('Event created but failed to add attachments'));
-        //                             });
-        //                     } else {
-        //                         resolve(true);
-        //                     }
-        //                 })
-        //                 .catch(() => {
-        //                     reject(new Error('Failed to send email'));
-        //                 });
-        //         })
-        //         .catch((error) => {
-        //             reject(new Error('Failed to get Graph client'));
-        //         });
-        // });
-    }
-
-    public createEventWithAttachments(newEvent: any, attachments?: any[]): Promise<boolean | Error> {
+        // Use the MSGraphClient to create the draft
         return new Promise((resolve, reject) => {
             this.msGraphClientFactory
                 .getClient('3')
                 .then((client: MSGraphClientV3) => {
-                    // Create the event
                     client
-                        .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}`)
-                        .post(newEvent)
-                        .then((event: any) => {
-                            // If there are attachments, add them to the event
-                            if (attachments && attachments.length > 0) {
-                                const attachmentPromises = attachments.map((attachment) => {
-                                    return client
-                                        .api(`${Constants.GRAPH_API_BASE_URI}${Constants.GRAPH_API_CREATE_EVENT}/${event.id}/attachments`)
-                                        .post(attachment);
-                                });
+                        .api('/me/messages') // Endpoint to create draft
+                        .post(draftPayload)
+                        .then((draft: any) => {
+                            console.log(".then - draft:", draft)
+                            // Return the draft ID
 
-                                // Wait for all attachments to be added
-                                Promise.all(attachmentPromises)
-                                    .then(() => {
-                                        const editModeUrl = `https://outlook.office365.com/calendar/deeplink/compose/${encodeURIComponent(event.id)}`
-                                        window.location.href = editModeUrl
-                                        resolve(true); // Resolve if everything succeeds
-                                    })
-                                    .catch(() => {
-                                        reject(new Error('Event created but failed to add attachments'));
-                                    });
+                            if (draft.webLink) {
+                                const editModeUrl = buildEditModeUrl(draft.id);
+                                window.location.href = editModeUrl;
                             } else {
-                                resolve(true); // Resolve if no attachments
+                                console.error("Draft does not have a valid webLink.");
                             }
+                            resolve(draft.id);
                         })
                         .catch((error: any) => {
-                            console.error("Failed to create event:", error);
-                            reject(new Error('Failed to create event'));
+                            console.error("Failed to create draft:", error);
+                            reject(new Error('Failed to create draft email'));
                         });
                 })
                 .catch((error: any) => {
@@ -393,4 +286,4 @@ export class CreateEvent implements IService {
         return base64;
     }
 }
-export default CreateEvent.getInstance();
+export default CreateDraft.getInstance();

@@ -85,3 +85,14 @@ export class EventProperties {
     this.Attachment = options.Attachment;
   }
 }
+export class DraftProperties {
+  public Subject: string;
+  public Body: string;
+  public Attachment?: EMailAttachment[];
+
+  constructor(options: DraftProperties) {
+    this.Subject = options.Subject;
+    this.Body = options.Body;
+    this.Attachment = options.Attachment;
+  }
+}

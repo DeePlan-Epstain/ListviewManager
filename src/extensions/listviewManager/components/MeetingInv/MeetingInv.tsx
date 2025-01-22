@@ -80,6 +80,7 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
         this.setState({
             ESArray: combinedContacts,
         });
+        this._onStart()
     }
 
     private _onChangedSubject = (e: any) => {
@@ -355,6 +356,28 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
 
     }
 
+    // _onStart without the form
+    public _onStart() {
+        this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
+            this._eventProperties.Attachment = attachments;
+            this.createEvent(this._eventProperties)
+                .then(() => {
+                    this.setState({ succeed: true, isLoading: false });
+                    this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
+                    setTimeout(() => {
+                        this.props.close(); // Close the modal after a delay for visual feedback
+                    }, 1000);
+                })
+                .catch((err: Error) => {
+                    console.error("Send Document Error", err);
+                    this.setState({
+                        SendEmailFailedError: true,
+                        isLoading: false,
+                    });
+                });
+        });
+    }
+
     public render() {
         return (
             <CacheProvider value={cacheRtl}>
@@ -376,7 +399,7 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                             justifyContent: 'center',
                         }}
                     >
-                        <div
+                        {/* <div
                             className="ModalContentContainer"
                             dir="rtl"
                             style={{
@@ -573,6 +596,24 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                                 </Box>
                             </div>
 
+                        </div> */}
+                        <div
+                            className="ModalContentContainer"
+                            dir="rtl"
+                            style={{
+                                width: '250px',
+                                background: 'white',
+                                padding: '20px',
+                                borderRadius: '5px',
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                flexDirection: 'column'
+                            }}
+                        >
+                            <h3>אנא המתן...</h3>
+                            <CircularProgress />
                         </div>
                     </Modal>
                 </StylesProvider>

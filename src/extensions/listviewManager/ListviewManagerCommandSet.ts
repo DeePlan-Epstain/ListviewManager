@@ -10,7 +10,7 @@ import {
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
-import { EMailProperties, EventProperties, SelectedFile } from "./models/global.model";
+import { EMailProperties, EventProperties, DraftProperties, SelectedFile } from "./models/global.model";
 import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
@@ -33,6 +33,9 @@ import { ISendEMailDialogContentProps } from "./components/ExternalSharing/SendE
 import { SendEMailDialogContent } from "./components/ExternalSharing/SendEMailDialogContent/SendEMailDialogContent";
 import MeetingInv from "./components/MeetingInv/MeetingInv";
 import { IMeetingInvProps } from "./components/MeetingInv/IMeetingInvProps";
+import { IDraftProps } from "./components/Draft/IDraftProps";
+import Draft from "./components/Draft/Draft.cmp"
+import CreateDraft from "./service/createDraft.service";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -87,6 +90,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
     meetingInvCompareOneCommand.visible = false
 
+    // MeetingInv
+    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
+    draftCompareOneCommand.visible = false
+
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
@@ -96,7 +103,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     return Promise.resolve();
   }
 
-  
+
   public async onExecute(event: IListViewCommandSetExecuteEventParameters): Promise<void> {
 
     const fullUrl = window.location.href;
@@ -177,6 +184,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToMeetingInv(Array.from(event.selectedRows));
+        }
+        break;
+      case "draft":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsToDraft(Array.from(event.selectedRows));
         }
         break;
       default:
@@ -420,7 +434,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // Set server relative URL
     const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
     CreateEvent.ServerRelativeUrl = currentRelativeUrl;
-    console.log("CreateEvent", CreateEvent)
     const element: React.ReactElement<IMeetingInvProps> = React.createElement(
       MeetingInv,
       {
@@ -457,6 +470,71 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer)
   }
 
+  private async selectedRowsToDraft(selectedRows: any[]): Promise<void> {
+
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+    // Retrieve user contacts
+    const contact = await this.graph.me.contacts();
+    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+
+    // Update CreateDraft properties
+    CreateDraft.EmailAddress = emails;
+    CreateDraft.fileNames = fileNames;
+    CreateDraft.fileUris = fileRefs;
+    CreateDraft.DocumentIdUrls = documentIdUrls;
+    CreateDraft.webUri = this.context.pageContext.web.absoluteUrl;
+    CreateDraft.context = this.context;
+
+    // Set MS Graph client factory
+    if (this.context && this.context.msGraphClientFactory) {
+      CreateDraft.msGraphClientFactory = this.context.msGraphClientFactory;
+    } else {
+      console.error("MSGraphClientFactory is undefined.");
+      return;
+    }
+
+    // Set server relative URL
+    const currentRelativeUrl = this.context.pageContext.site.serverRelativeUrl;
+    CreateDraft.ServerRelativeUrl = currentRelativeUrl;
+    const element: React.ReactElement<IDraftProps> = React.createElement(
+      Draft,
+      {
+        close: this._closeDialogContainer,
+        draftProperties: new DraftProperties({
+          Subject: `טיוטה - ${CreateDraft.fileNames}`,
+          Body: "",
+        }),
+        createDraft: CreateDraft,
+        submit: () => {
+          // Clear eMailProperties values
+          new DraftProperties({
+            Subject: "",
+            Body: "",
+          });
+          // Close the dialog container
+          this._closeDialogContainer();
+        },
+      },
+    )
+
+    ReactDom.render(element, this.dialogContainer)
+  }
+
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
@@ -467,9 +545,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
-    const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
-
+    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -485,20 +563,28 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         // event.selectedRows[0].getValueByName("fileSize") > 0;
       }
 
-      // if there is one selected item or more and its a file
-      if (externalSharingCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType")
-          if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-        } else externalSharingCompareOneCommand.visible = false;
-      }
-      
+      // // if there is one selected item or more and its a file
+      // if (externalSharingCompareOneCommand) {
+      //   if (event.selectedRows?.length > 0) {
+      //     const fileExt = event.selectedRows[0].getValueByName(".fileType")
+      //     if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+      //   } else externalSharingCompareOneCommand.visible = false;
+      // }
+
       // MeetingInv
       if (meetingInvCompareOneCommand) {
         if (event.selectedRows?.length > 0) {
           const fileExt = event.selectedRows[0].getValueByName(".fileType")
           if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
         } else meetingInvCompareOneCommand.visible = false;
+      }
+
+      // Draft
+      if (draftCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") draftCompareOneCommand.visible = true;
+        } else draftCompareOneCommand.visible = false;
       }
 
       if (compareSixCommand) {
