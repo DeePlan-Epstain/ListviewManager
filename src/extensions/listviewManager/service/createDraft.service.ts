@@ -205,7 +205,6 @@ export class CreateDraft implements IService {
                         .api('/me/messages') // Endpoint to create draft
                         .post(draftPayload)
                         .then((draft: any) => {
-                            console.log(".then - draft:", draft)
                             // Return the draft ID
 
                             if (draft.webLink) {
