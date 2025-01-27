@@ -79,3 +79,8 @@
   align-items: center;
   gap: 1em;
 }
+
+.folderExplorerModal{
+  max-height: 80%;
+  overflow-y: auto;
+}

@@ -187,7 +187,7 @@ export default function LinkToCategory({
           )}
 
           <div
-            className={`${modalStyles.modal}`}
+            className={`${modalStyles.modal} ${modalStyles.folderExplorerModal}`}
             onClick={(ev: any) => ev.stopPropagation()}
           >
             <div id="FilePickerWrapper">
