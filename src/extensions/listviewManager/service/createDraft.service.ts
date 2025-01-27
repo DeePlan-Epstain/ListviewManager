@@ -205,15 +205,9 @@ export class CreateDraft implements IService {
                         .api('/me/messages') // Endpoint to create draft
                         .post(draftPayload)
                         .then((draft: any) => {
-                            // Return the draft ID
-
-                            if (draft.webLink) {
-                                const editModeUrl = buildEditModeUrl(draft.id);
-                                window.location.href = editModeUrl;
-                            } else {
-                                console.error("Draft does not have a valid webLink.");
-                            }
-                            resolve(draft.id);
+                            // Return the draft ID                            
+                            const editModeUrl = buildEditModeUrl(draft.id);
+                            resolve(editModeUrl);
                         })
                         .catch((error: any) => {
                             console.error("Failed to create draft:", error);
