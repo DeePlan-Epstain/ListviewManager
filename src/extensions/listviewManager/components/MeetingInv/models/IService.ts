@@ -11,7 +11,7 @@ export interface IService {
     DocumentIdUrls: string[];
     ServerRelativeUrl: string;
     EmailAddress: string[];
-    createEvent(eventProperties: EventProperties): Promise<boolean | Error>;
+    createEvent(eventProperties: EventProperties): Promise<string | Error>;
     getFileContentAsBase64(fileUris: string[]): Promise<string[]>;
     CopyFileAndCleanMetadata(fileUris: string[], fileNames: string[], DocumentIdUrls: string[], ServerRelativeUrl: string): Promise<string[]>;
     DeleteCopiedFile(fileUri: string[]): Promise<boolean>;

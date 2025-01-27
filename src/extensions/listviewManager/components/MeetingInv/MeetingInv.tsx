@@ -36,6 +36,7 @@ export interface IMeetingInvState {
     endTime: any,
     dateAndTimeError: string
     onlineMeeting: boolean
+    link: string
 }
 
 export default class MeetingInv extends React.Component<IMeetingInvProps, IMeetingInvState> {
@@ -63,7 +64,8 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
             startTime: this.props.eventProperties.startTime,
             endTime: this.props.eventProperties.endTime,
             dateAndTimeError: "",
-            onlineMeeting: false
+            onlineMeeting: false,
+            link: '',
         };
         this._eventProperties = this.props.eventProperties;
         this._submit = this._submit.bind(this);
@@ -81,6 +83,10 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
             ESArray: combinedContacts,
         });
         this._onStart()
+    }
+
+    componentWillUnmount(): void {
+        window.open(this.state.link, '_blank');
     }
 
     private _onChangedSubject = (e: any) => {
@@ -203,11 +209,11 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
         });
     }
 
-    private createEvent(EventProperties: EventProperties): Promise<boolean> {
+    private createEvent(EventProperties: EventProperties): Promise<string> {
         return new Promise((resolve, reject) => {
             this.props.createEvent.createEvent(EventProperties)
-                .then(() => {
-                    resolve(true);
+                .then((link: string) => {
+                    resolve(link);
                 })
                 .catch((err: any) => {
                     reject(err);
@@ -339,10 +345,9 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
                 this.createEvent(this._eventProperties)
                     .then(() => {
                         this.setState({ succeed: true, isLoading: false });
-                        this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
-                        setTimeout(() => {
+                        this.props.createEvent.DeleteCopiedFile(this.copiedFileUri).then(() => {
                             this.props.close(); // Close the modal after a delay for visual feedback
-                        }, 1000);
+                        });
                     })
                     .catch((err: Error) => {
                         console.error("Send Document Error", err);
@@ -361,12 +366,12 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
         this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
             this._eventProperties.Attachment = attachments;
             this.createEvent(this._eventProperties)
-                .then(() => {
-                    this.setState({ succeed: true, isLoading: false });
-                    this.props.createEvent.DeleteCopiedFile(this.copiedFileUri);
-                    setTimeout(() => {
+                .then((link: string) => {
+                    this.props.createEvent.DeleteCopiedFile(this.copiedFileUri).then(() => {
+                        this.setState({ succeed: true, isLoading: false, link: link });
+                    }).then(() => {
                         this.props.close(); // Close the modal after a delay for visual feedback
-                    }, 1000);
+                    });
                 })
                 .catch((err: Error) => {
                     console.error("Send Document Error", err);

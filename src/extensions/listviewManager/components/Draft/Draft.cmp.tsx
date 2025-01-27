@@ -15,6 +15,7 @@ export interface IDraftState {
     SendEmailFailedError: boolean;
     succeed?: boolean;
     error?: Error;
+    link: string
 }
 
 export default class Draft extends React.Component<IDraftProps, IDraftState> {
@@ -29,6 +30,7 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
             isLoading: false,
             succeed: false,
             SendEmailFailedError: false,
+            link: '',
         };
         this._draftProperties = this.props.draftProperties;
         this._submit = this._submit.bind(this);
@@ -36,6 +38,10 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
 
     componentDidMount() {
         this._submit()
+    }
+
+    componentWillUnmount(): void {
+        window.open(this.state.link, '_blank');
     }
 
     // Returns EMailAttachment object which contains the file name and its Content Encodes into base64 string
@@ -80,8 +86,8 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
     private createDraft(DraftProperties: DraftProperties): Promise<string> {
         return new Promise((resolve, reject) => {
             this.props.createDraft.createDraft(DraftProperties)
-                .then((draftId: string) => {
-                    resolve(draftId);
+                .then((link: string) => {
+                    resolve(link);
                 })
                 .catch((err: any) => {
                     reject(err);
@@ -95,14 +101,13 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
         this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
             this._draftProperties.Attachment = attachments;
             this.createDraft(this._draftProperties)
-                .then(async (draftId: string) => {
-                    // window.location.href = draft.webLink
-                    // await this.openInOutlook(draftId)
-                    this.setState({ succeed: true, isLoading: false });
-                    this.props.createDraft.DeleteCopiedFile(this.copiedFileUri);
-                    setTimeout(() => {
+                .then((link: string) => {
+
+                    this.props.createDraft.DeleteCopiedFile(this.copiedFileUri).then(() => {
+                        this.setState({ succeed: true, isLoading: false, link: link });
+                    }).then(() => {
                         this.props.close(); // Close the modal after a delay for visual feedback
-                    }, 1000);
+                    });
                 })
                 .catch((err: Error) => {
                     console.error("Send Document Error", err);

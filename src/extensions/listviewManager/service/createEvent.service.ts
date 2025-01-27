@@ -162,7 +162,7 @@ export class CreateEvent implements IService {
     }
 
     // Send the email with its content
-    public createEvent(eventProperties: EventProperties): Promise<boolean | Error> {
+    public createEvent(eventProperties: EventProperties): Promise<string | Error> {
         type Attachment = {
             "@odata.type": string;
             name: string;
@@ -291,7 +291,7 @@ export class CreateEvent implements IService {
         // });
     }
 
-    public createEventWithAttachments(newEvent: any, attachments?: any[]): Promise<boolean | Error> {
+    public createEventWithAttachments(newEvent: any, attachments?: any[]): Promise<string | Error> {
         return new Promise((resolve, reject) => {
             this.msGraphClientFactory
                 .getClient('3')
@@ -313,14 +313,15 @@ export class CreateEvent implements IService {
                                 Promise.all(attachmentPromises)
                                     .then(() => {
                                         const editModeUrl = `https://outlook.office365.com/calendar/deeplink/compose/${encodeURIComponent(event.id)}`
-                                        window.location.href = editModeUrl
-                                        resolve(true); // Resolve if everything succeeds
+                                        // window.location.href = editModeUrl
+
+                                        resolve(editModeUrl); // Resolve if everything succeeds
                                     })
                                     .catch(() => {
                                         reject(new Error('Event created but failed to add attachments'));
                                     });
                             } else {
-                                resolve(true); // Resolve if no attachments
+                                resolve(''); // Resolve if no attachments
                             }
                         })
                         .catch((error: any) => {
