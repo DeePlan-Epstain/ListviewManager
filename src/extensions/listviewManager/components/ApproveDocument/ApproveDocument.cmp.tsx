@@ -313,6 +313,9 @@ export default function ReviewDocument({
                               להמשיך...
                             </span>
                           )}
+                              <label>
+                              *נדרש להוסיף נמען באנגלית
+                              </label>
                       </div>
 
                       <div>
