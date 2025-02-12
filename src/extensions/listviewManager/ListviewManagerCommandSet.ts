@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDom from "react-dom";
 import { Log } from "@microsoft/sp-core-library";
-import { getSP, getGraph } from "../../pnpjs-config";
+import { getSP, getGraph, getSPByPath } from "../../pnpjs-config";
 import {
   BaseListViewCommandSet,
   Command,
@@ -36,6 +36,7 @@ import { IMeetingInvProps } from "./components/MeetingInv/IMeetingInvProps";
 import { IDraftProps } from "./components/Draft/IDraftProps";
 import Draft from "./components/Draft/Draft.cmp"
 import CreateDraft from "./service/createDraft.service";
+import toast, { Toaster } from 'react-hot-toast'; // Importing react-hot-toast
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -69,6 +70,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       document.createElement("div")
     );
 
+    // Initialize the toast container when the extension is loaded
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    // Render the Toaster (this will allow toasts to show)
+    ReactDom.render(React.createElement(Toaster, { position: "top-left", }), container);
+
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
     compareOneCommand.visible = false;
     const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
@@ -93,6 +101,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // MeetingInv
     const draftCompareOneCommand: Command = this.tryGetCommand('draft')
     draftCompareOneCommand.visible = false
+
+    // shoppingCart
+    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
+    shoppingCartCompareOneCommand.visible = false
 
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
@@ -191,6 +203,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToDraft(Array.from(event.selectedRows));
+        }
+        break;
+      case "shoppingCart":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsToShoppingCart(Array.from(event.selectedRows));
         }
         break;
       default:
@@ -535,6 +554,30 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer)
   }
 
+  private async selectedRowsToShoppingCart(selectedRows: any[]): Promise<void> {
+    const sp = getSPByPath("https://epstin100.sharepoint.com/sites/EpsteinPortal", this.context);
+
+    for (const row of selectedRows) {
+      try {
+        const fileName = row.getValueByName("FileLeafRef").toString();
+        const fileRef = row.getValueByName("FileRef").toString();
+        const fileId = row.getValueByName("ID").toString();
+
+        await sp.web.lists.getById("a9b46017-b0f0-4729-aeb0-a139aa421bc5").items.add({
+          Title: fileName,
+          RelativePath: fileRef,
+          itemID: fileId,
+        });
+        // Show success toast notification
+        toast.success(`הקובץ ${fileName} נוסף לסל בהצלחה!`);
+
+      } catch (error) {
+        // Show error toast notification
+        toast.error(`לא ניתן להוסיף את הקובץ לסל. אנא נסה שוב`);
+      }
+    }
+  }
+
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
@@ -548,6 +591,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
     const draftCompareOneCommand: Command = this.tryGetCommand('draft')
+    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -585,6 +629,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           const fileExt = event.selectedRows[0].getValueByName(".fileType")
           if (fileExt.toLowerCase() !== "") draftCompareOneCommand.visible = true;
         } else draftCompareOneCommand.visible = false;
+      }
+
+      // shoppingCart
+      if (shoppingCartCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType")
+          if (fileExt.toLowerCase() !== "") shoppingCartCompareOneCommand.visible = true;
+        } else shoppingCartCompareOneCommand.visible = false;
       }
 
       if (compareSixCommand) {

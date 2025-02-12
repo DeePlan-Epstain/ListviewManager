@@ -34,3 +34,7 @@ export const getGraph = (context: any): GraphFI => {
   return _graph;
 };
 
+export const getSPByPath = (path: string, context: any): SPFI => {
+  return spfi(path).using(SPFx(context));
+};
+

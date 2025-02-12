@@ -8,6 +8,13 @@
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "items": {
+    "shoppingCart": {
+      "title": {
+        "default": "הוסף לסל"
+      },
+      "iconImageUrl": "./assets/imgs/cart.svg",
+      "type": "command"
+    },
     "Approval_Document": {
       "position": 8,
       "title": {
