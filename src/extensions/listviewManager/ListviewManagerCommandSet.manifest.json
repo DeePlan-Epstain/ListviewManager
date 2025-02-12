@@ -74,6 +74,20 @@
       },
       "iconImageUrl": "./assets/imgs/share.svg",
       "type": "command"
+    },
+    "addToFavorites": {
+      "title": {
+        "default": "הוסף למועדפים"
+      },
+      "iconImageUrl": "./assets/imgs/share.svg",
+      "type": "command"
+    },
+    "deleteFromFavorites": {
+      "title": {
+        "default": "הסר ממועדפים"
+      },
+      "iconImageUrl": "./assets/imgs/share.svg",
+      "type": "command"
     }
   }
 }

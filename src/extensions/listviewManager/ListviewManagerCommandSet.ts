@@ -37,6 +37,7 @@ import { IDraftProps } from "./components/Draft/IDraftProps";
 import Draft from "./components/Draft/Draft.cmp"
 import CreateDraft from "./service/createDraft.service";
 import toast, { Toaster } from 'react-hot-toast'; // Importing react-hot-toast
+import { spfi, SPFx } from "@pnp/sp";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -45,6 +46,7 @@ export interface IListviewManagerCommandSetProperties {
 }
 
 const LOG_SOURCE: string = "ListviewManagerCommandSet";
+const FAVORITES_LIST_ID = '6f3d6257-4a9b-41fe-a847-487c942cd628'
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
   private dialogContainer: HTMLDivElement;
@@ -58,13 +60,40 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     "EpsteinSystem@Epstein.co.il",
   ].map((e) => e.toLocaleLowerCase());
 
+  private favorites: any[] = []
+  private spPortal: SPFI = null
+
   public async onInit(): Promise<void> {
     console.log(solution.name + ":", solution.version);
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
-    this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
-    this.currUser = await this.sp.web.currentUser();
+    try {
+      this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
+      this.currUser = await this.sp.web.currentUser();
+      // Favorites list
+      this.spPortal = spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(this.context))
+      const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
+
+      const { Id, Email } = this.currUser
+      const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === this.currUser.Email.trim().toLocaleLowerCase())
+      if (allListItemsFavorites && userFound) {
+        // user exists in the list
+        this.favorites = JSON.parse(userFound.favorites)
+      } else {
+        // user do not exist in the list
+        const userPortal = await this.spPortal.web.siteUsers.getByEmail(Email)()
+        await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.add({
+          Title: Email,
+          userId: userPortal.Id,
+          email: Email,
+          favorites: JSON.stringify([])
+        })
+      }
+
+    } catch (error) {
+      console.error('onInit error:', error)
+    }
 
     this.dialogContainer = document.body.appendChild(
       document.createElement("div")
@@ -106,6 +135,15 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
     shoppingCartCompareOneCommand.visible = false
 
+    // addToFavorites
+    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
+    addToFavoritesCompareOneCommand.visible = false
+
+    // deleteFromFavorites
+    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
+    deleteFromFavoritesCompareOneCommand.visible = false
+
+
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
@@ -145,8 +183,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       );
       return row;
     });
-
-
 
     switch (event.itemId) {
       case "Approval_Document":
@@ -210,6 +246,20 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
           await this.selectedRowsToShoppingCart(Array.from(event.selectedRows));
+        }
+        break;
+      case "addToFavorites":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsAddToFavorites(Array.from(event.selectedRows));
+        }
+        break;
+      case "deleteFromFavorites":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsDeleteFromFavorites(Array.from(event.selectedRows));
         }
         break;
       default:
@@ -578,6 +628,91 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 
+  private async selectedRowsAddToFavorites(selectedRows: any[]): Promise<void> {
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+
+    if (!this.favorites.find(fav => fav.fileName === fileNames[0])) {
+      try {
+        const payload = {
+          fileName: fileNames[0],
+          fileRef: fileRefs[0],
+          documentIdUrl: documentIdUrls[0]
+        }
+
+        this.favorites.push(payload)
+        const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
+
+        await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
+          favorites: JSON.stringify(this.favorites)
+        }).then(() => {
+          toast.success(`הקובץ ${fileNames[0]} נוסף למועדפים בהצלחה!`);
+        })
+
+      } catch (error) {
+        console.error(error)
+        toast.error(`הוספת הקובץ ${fileNames[0]} נכשלה.`)
+      }
+
+    } else {
+      toast.success(`הקובץ ${fileNames[0]} קיים במועדפים`)
+    }
+  }
+
+  private async selectedRowsDeleteFromFavorites(selectedRows: any[]): Promise<void> {
+    // Initialize arrays to store file information
+    const fileNames: string[] = [];
+    const fileRefs: string[] = [];
+    const documentIdUrls: string[] = [];
+
+    // Iterate through selected rows to gather file information
+    selectedRows.forEach(row => {
+      const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
+      const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+      fileNames.push(fileName);
+      fileRefs.push(fileRef);
+      documentIdUrls.push(documentIdUrl);
+    });
+
+    if (this.favorites.find(fav => fav.fileName === fileNames[0])) {
+      try {
+
+        this.favorites = this.favorites.filter(fav => fav.fileName !== fileNames[0])
+
+        const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
+
+        await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
+          favorites: JSON.stringify(this.favorites)
+        }).then(() => {
+          toast.success(`הקובץ ${fileNames[0]} הוסר מהמועדפים בהצלחה!`);
+        })
+
+      } catch (error) {
+        console.error(error)
+        toast.error(`הסרת הקובץ ${fileNames[0]} נכשלה.`)
+      }
+
+    } else {
+      toast.success(`הקובץ לא ${fileNames[0]} קיים במועדפים`)
+    }
+  }
+
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
@@ -592,6 +727,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
     const draftCompareOneCommand: Command = this.tryGetCommand('draft')
     const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
+    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
+    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -637,6 +774,25 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           const fileExt = event.selectedRows[0].getValueByName(".fileType")
           if (fileExt.toLowerCase() !== "") shoppingCartCompareOneCommand.visible = true;
         } else shoppingCartCompareOneCommand.visible = false;
+      }
+
+      // addToFavorites
+      if (addToFavoritesCompareOneCommand) {
+
+        if (event.selectedRows?.length === 1 && !this.favorites.find(fav => fav.fileName === event.selectedRows[0].getValueByName('FileLeafRef'))) {
+          addToFavoritesCompareOneCommand.visible = true
+        } else {
+          addToFavoritesCompareOneCommand.visible = false
+        }
+      }
+
+      // deleteFromFavorites
+      if (deleteFromFavoritesCompareOneCommand) {
+        if (event.selectedRows?.length === 1 && this.favorites.find(fav => fav.fileName === event.selectedRows[0].getValueByName('FileLeafRef'))) {
+          deleteFromFavoritesCompareOneCommand.visible = true
+        } else {
+          deleteFromFavoritesCompareOneCommand.visible = false
+        }
       }
 
       if (compareSixCommand) {
