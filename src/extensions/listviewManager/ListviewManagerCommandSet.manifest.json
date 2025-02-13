@@ -15,6 +15,20 @@
       "iconImageUrl": "./assets/imgs/cart.svg",
       "type": "command"
     },
+    "addToFavorites": {
+      "title": {
+        "default": "הוסף למועדפים"
+      },
+      "iconImageUrl": "./assets/imgs/addToFavorites.svg",
+      "type": "command"
+    },
+    "deleteFromFavorites": {
+      "title": {
+        "default": "הסר ממועדפים"
+      },
+      "iconImageUrl": "./assets/imgs/remove.svg",
+      "type": "command"
+    },
     "Approval_Document": {
       "position": 8,
       "title": {
@@ -65,26 +79,12 @@
       "title": {
         "default": "זימון פגישה"
       },
-      "iconImageUrl": "./assets/imgs/event.png",
+      "iconImageUrl": "./assets/imgs/meeting.svg",
       "type": "command"
     },
     "draft": {
       "title": {
         "default": "שיתוף קובץ במייל"
-      },
-      "iconImageUrl": "./assets/imgs/share.svg",
-      "type": "command"
-    },
-    "addToFavorites": {
-      "title": {
-        "default": "הוסף למועדפים"
-      },
-      "iconImageUrl": "./assets/imgs/share.svg",
-      "type": "command"
-    },
-    "deleteFromFavorites": {
-      "title": {
-        "default": "הסר ממועדפים"
       },
       "iconImageUrl": "./assets/imgs/share.svg",
       "type": "command"

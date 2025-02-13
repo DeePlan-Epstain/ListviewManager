@@ -38,6 +38,7 @@ import Draft from "./components/Draft/Draft.cmp"
 import CreateDraft from "./service/createDraft.service";
 import toast, { Toaster } from 'react-hot-toast'; // Importing react-hot-toast
 import { spfi, SPFx } from "@pnp/sp";
+import './../ext.css'
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -71,8 +72,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     try {
       this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
       this.currUser = await this.sp.web.currentUser();
+      this.spPortal = getSPByPath("https://epstin100.sharepoint.com/sites/EpsteinPortal", this.context);
       // Favorites list
-      this.spPortal = spfi("https://epstin100.sharepoint.com/sites/EpsteinPortal/").using(SPFx(this.context))
       const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
 
       const { Id, Email } = this.currUser
@@ -605,7 +606,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private async selectedRowsToShoppingCart(selectedRows: any[]): Promise<void> {
-    const sp = getSPByPath("https://epstin100.sharepoint.com/sites/EpsteinPortal", this.context);
 
     for (const row of selectedRows) {
       try {
@@ -613,13 +613,24 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         const fileRef = row.getValueByName("FileRef").toString();
         const fileId = row.getValueByName("ID").toString();
 
-        await sp.web.lists.getById("a9b46017-b0f0-4729-aeb0-a139aa421bc5").items.add({
-          Title: fileName,
-          RelativePath: fileRef,
-          itemID: fileId,
-        });
-        // Show success toast notification
-        toast.success(`הקובץ ${fileName} נוסף לסל בהצלחה!`);
+        // Check if the item already exists in the shopping cart
+        const existingItems = await this.spPortal.web.lists.getById("a9b46017-b0f0-4729-aeb0-a139aa421bc5")
+          .items.filter(`RelativePath eq '${fileRef}'`)();
+
+        if (existingItems.length > 0) {
+          // Item already exists
+          toast.error(`הקובץ ${fileName} כבר קיים בסל`);
+        } else {
+          // Add the item to the shopping cart
+          await this.spPortal.web.lists.getById("a9b46017-b0f0-4729-aeb0-a139aa421bc5").items.add({
+            Title: fileName,
+            RelativePath: fileRef,
+            itemID: fileId,
+          });
+
+          // Show success toast notification
+          toast.success(`הקובץ ${fileName} נוסף לסל בהצלחה`);
+        }
 
       } catch (error) {
         // Show error toast notification
@@ -645,6 +656,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       documentIdUrls.push(documentIdUrl);
     });
 
+    const recoveryList = this.favorites
 
     if (!this.favorites.find(fav => fav.fileName === fileNames[0])) {
       try {
@@ -664,6 +676,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
 
       } catch (error) {
+        this.favorites = recoveryList
         console.error(error)
         toast.error(`הוספת הקובץ ${fileNames[0]} נכשלה.`)
       }
@@ -690,6 +703,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       documentIdUrls.push(documentIdUrl);
     });
 
+    const recoveryList = this.favorites
+
     if (this.favorites.find(fav => fav.fileName === fileNames[0])) {
       try {
 
@@ -704,6 +719,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
 
       } catch (error) {
+        this.favorites = recoveryList
         console.error(error)
         toast.error(`הסרת הקובץ ${fileNames[0]} נכשלה.`)
       }
