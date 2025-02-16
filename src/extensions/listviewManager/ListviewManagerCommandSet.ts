@@ -663,7 +663,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         const payload = {
           fileName: fileNames[0],
           fileRef: fileRefs[0],
-          documentIdUrl: documentIdUrls[0]
+          documentIdUrl: documentIdUrls[0],
+          serverRelativeUrl: this.context.pageContext.site.serverRelativeUrl,
+          absoluteUrl: this.context.pageContext.site.absoluteUrl
         }
 
         this.favorites.push(payload)
