@@ -644,16 +644,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
     const documentIdUrls: string[] = [];
+    const itemIds: string[] = [];
 
     // Iterate through selected rows to gather file information
     selectedRows.forEach(row => {
       const fileName = row.getValueByName("FileLeafRef").toString();
       const fileRef = row.getValueByName("FileRef").toString();
       const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+      const itemId = row.getValueByName("ID").toString();
 
       fileNames.push(fileName);
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
+      itemIds.push(itemId)
     });
 
     const recoveryList = this.favorites
@@ -665,7 +668,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           fileRef: fileRefs[0],
           documentIdUrl: documentIdUrls[0],
           serverRelativeUrl: this.context.pageContext.site.serverRelativeUrl,
-          absoluteUrl: this.context.pageContext.site.absoluteUrl
+          absoluteUrl: this.context.pageContext.site.absoluteUrl,
+          itemId: itemIds[0],
+          libraryId: this.context.pageContext.list.id["_guid"],
         }
 
         this.favorites.push(payload)
