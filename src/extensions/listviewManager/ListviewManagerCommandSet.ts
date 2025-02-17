@@ -640,11 +640,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private async selectedRowsAddToFavorites(selectedRows: any[]): Promise<void> {
+
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
     const documentIdUrls: string[] = [];
     const itemIds: string[] = [];
+    const FSObjTypes: string[] = [];
 
     // Iterate through selected rows to gather file information
     selectedRows.forEach(row => {
@@ -652,11 +654,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       const fileRef = row.getValueByName("FileRef").toString();
       const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
       const itemId = row.getValueByName("ID").toString();
+      const FSObjType = row.getValueByName("FSObjType").toString();
 
       fileNames.push(fileName);
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
       itemIds.push(itemId)
+      FSObjTypes.push(FSObjType)
     });
 
     const recoveryList = this.favorites
@@ -671,6 +675,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           absoluteUrl: this.context.pageContext.site.absoluteUrl,
           itemId: itemIds[0],
           libraryId: this.context.pageContext.list.id["_guid"],
+          FSObjType: FSObjTypes[0]
         }
 
         this.favorites.push(payload)
