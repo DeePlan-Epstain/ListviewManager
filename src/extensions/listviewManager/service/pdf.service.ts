@@ -27,7 +27,7 @@ function getRelativeSite(fileRef: string) {
 export async function ConvertToPdf(context: ListViewCommandSetContext, selectedItem: SelectedFile) {
     const paService = new PAService(context);
 
-    let baseUrl = 'https://epstin100.sharepoint.com/';
+    let baseUrl = 'https://epstin100.sharepoint.com';
 
     const siteAddress: string = baseUrl + getRelativeSite(selectedItem.FileRef);
     const libraryId: string = context.pageContext.list.id["_guid"];
@@ -46,17 +46,17 @@ export async function ConvertToPdf(context: ListViewCommandSetContext, selectedI
             title: "הפעולה בוצעה בהצלחה!",
             text: "הקובץ הומר לPDF בהצלחה",
             icon: "success"
-          });
+        });
     }
     catch (error) {
-        if(error.response && error.response.status === 400){
+        if (error.response && error.response.status === 400) {
             Swal.fire({
                 icon: "error",
                 title: "שגיאה",
                 text: Errors.CONVERT_TO_PDF_FAILED_EMPTY_EXCEL,
             });
         }
-        else if(error.response && error.response.status === 401){
+        else if (error.response && error.response.status === 401) {
             Swal.fire({
                 icon: "error",
                 title: "שגיאה",
