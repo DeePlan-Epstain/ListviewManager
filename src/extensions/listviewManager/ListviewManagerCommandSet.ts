@@ -640,6 +640,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private async selectedRowsAddToFavorites(selectedRows: any[]): Promise<void> {
+    console.log("selectedRowsAddToFavorites - selectedRows:", selectedRows)
 
     // Initialize arrays to store file information
     const fileNames: string[] = [];
@@ -662,6 +663,18 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       itemIds.push(itemId)
       FSObjTypes.push(FSObjType)
     });
+    const navTreeListIds = '41d92fdd-1469-475b-8d19-9fe47cca24be'
+    const siteId = this.context.pageContext.site.id
+    let linkTitle = null
+
+    try {
+      linkTitle = await this.spPortal.web.lists.getById(navTreeListIds).items.filter(`SiteId eq '${siteId}'`)()
+    } catch (error) {
+      console.error(error)
+      return
+    }
+
+    const path = linkTitle ? `${linkTitle[0].Title}/${this.context.pageContext.list.title}` : ''
 
     const recoveryList = this.favorites
 
@@ -675,7 +688,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           absoluteUrl: this.context.pageContext.site.absoluteUrl,
           itemId: itemIds[0],
           libraryId: this.context.pageContext.list.id["_guid"],
-          FSObjType: FSObjTypes[0]
+          FSObjType: FSObjTypes[0],
+          path: path
         }
 
         this.favorites.push(payload)
