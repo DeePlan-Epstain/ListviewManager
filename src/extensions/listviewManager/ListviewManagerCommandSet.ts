@@ -639,8 +639,24 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 
+  private async getFavorites() {
+    const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
+    const { Id, Email } = this.currUser
+    const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === this.currUser.Email.trim().toLocaleLowerCase())
+    if (allListItemsFavorites && userFound) {
+      // user exists in the list
+      return JSON.parse(userFound.favorites)
+    } else {
+      return []
+    }
+  }
+
   private async selectedRowsAddToFavorites(selectedRows: any[]): Promise<void> {
-    console.log("selectedRowsAddToFavorites - selectedRows:", selectedRows)
+
+    if (!selectedRows || selectedRows.length === 0) {
+      console.warn("No rows selected.");
+      return;
+    }
 
     // Initialize arrays to store file information
     const fileNames: string[] = [];
@@ -648,6 +664,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const documentIdUrls: string[] = [];
     const itemIds: string[] = [];
     const FSObjTypes: string[] = [];
+    const Projects: string[] = [];
 
     // Iterate through selected rows to gather file information
     selectedRows.forEach(row => {
@@ -656,29 +673,45 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       const documentIdUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
       const itemId = row.getValueByName("ID").toString();
       const FSObjType = row.getValueByName("FSObjType").toString();
+      const Project = row.getValueByName("Project").toString();
 
       fileNames.push(fileName);
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
       itemIds.push(itemId)
       FSObjTypes.push(FSObjType)
+      Projects.push(Project)
     });
-    const navTreeListIds = '41d92fdd-1469-475b-8d19-9fe47cca24be'
+
+    const navTreeListId = '41d92fdd-1469-475b-8d19-9fe47cca24be'
     const siteId = this.context.pageContext.site.id
-    let linkTitle = null
+    let navTitle = "";
 
     try {
-      linkTitle = await this.spPortal.web.lists.getById(navTreeListIds).items.filter(`SiteId eq '${siteId}'`)()
+      const navItems = await this.spPortal.web.lists
+        .getById(navTreeListId)
+        .items.filter(`SiteId eq '${siteId}'`)();
+      if (navItems && navItems.length > 0) {
+        navTitle = navItems[0].Title;
+      }
     } catch (error) {
-      console.error(error)
-      return
+      console.error("Error retrieving navigation title:", error);
+      return;
     }
 
-    const path = linkTitle ? `${linkTitle[0].Title}/${this.context.pageContext.list.title}` : ''
+    const path = navTitle
+      ? `${navTitle}/${this.context.pageContext.list.title}`
+      : "";
 
-    const recoveryList = this.favorites
+    let favorites: any[] = []
 
-    if (!this.favorites.find(fav => fav.fileName === fileNames[0])) {
+    try {
+      favorites = await this.getFavorites()
+    } catch (error) {
+      console.error("Error retrieving favorites:", error);
+    }
+
+    if (!favorites.find(fav => fav.fileName === fileNames[0])) {
       try {
         const payload = {
           fileName: fileNames[0],
@@ -689,20 +722,20 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           itemId: itemIds[0],
           libraryId: this.context.pageContext.list.id["_guid"],
           FSObjType: FSObjTypes[0],
-          path: path
+          path: path,
+          project: Projects[0]
         }
 
-        this.favorites.push(payload)
+        favorites.push(payload)
         const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
 
         await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
-          favorites: JSON.stringify(this.favorites)
+          favorites: JSON.stringify(favorites)
         }).then(() => {
           toast.success(`הקובץ ${fileNames[0]} נוסף למועדפים בהצלחה!`);
         })
 
       } catch (error) {
-        this.favorites = recoveryList
         console.error(error)
         toast.error(`הוספת הקובץ ${fileNames[0]} נכשלה.`)
       }
@@ -713,6 +746,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private async selectedRowsDeleteFromFavorites(selectedRows: any[]): Promise<void> {
+
+    if (!selectedRows || selectedRows.length === 0) {
+      console.warn("No rows selected.");
+      return;
+    }
+
     // Initialize arrays to store file information
     const fileNames: string[] = [];
     const fileRefs: string[] = [];
@@ -729,12 +768,18 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       documentIdUrls.push(documentIdUrl);
     });
 
-    const recoveryList = this.favorites
+    let favorites: any[] = []
 
-    if (this.favorites.find(fav => fav.fileName === fileNames[0])) {
+    try {
+      favorites = await this.getFavorites()
+    } catch (error) {
+      console.error("Error retrieving favorites:", error);
+    }
+
+    if (favorites.find(fav => fav.fileName === fileNames[0])) {
       try {
 
-        this.favorites = this.favorites.filter(fav => fav.fileName !== fileNames[0])
+        favorites = favorites.filter(fav => fav.fileName !== fileNames[0])
 
         const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
 
@@ -745,7 +790,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
 
       } catch (error) {
-        this.favorites = recoveryList
         console.error(error)
         toast.error(`הסרת הקובץ ${fileNames[0]} נכשלה.`)
       }
