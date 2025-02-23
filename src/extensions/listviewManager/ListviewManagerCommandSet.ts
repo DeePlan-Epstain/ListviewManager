@@ -700,7 +700,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const recoveryList = this.favorites
 
-    if (!this.favorites.find(fav => fav.fileName === fileNames[0])) {
+    if (!this.favorites.find(fav => fav.fileRef === fileRefs[0])) {
       try {
         const payload = {
           fileName: fileNames[0],
@@ -738,12 +738,15 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private async selectedRowsDeleteFromFavorites(selectedRows: any[]): Promise<void> {
     // Initialize arrays to store file information
     const fileNames: string[] = [];
+    const fileRefs: string[] = [];
 
     // Iterate through selected rows to gather file information
     selectedRows.forEach(row => {
       const fileName = row.getValueByName("FileLeafRef").toString();
+      const fileRef = row.getValueByName("FileRef").toString();
 
       fileNames.push(fileName);
+      fileRefs.push(fileRef);
     });
 
     try {
@@ -754,10 +757,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const recoveryList = this.favorites
 
-    if (this.favorites.find(fav => fav.fileName === fileNames[0])) {
+    if (this.favorites.find(fav => fav.fileRef === fileRefs[0])) {
       try {
 
-        this.favorites = this.favorites.filter(fav => fav.fileName !== fileNames[0])
+        this.favorites = this.favorites.filter(fav => fav.fileRef !== fileRefs[0])
 
         const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
 
@@ -774,7 +777,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       }
 
     } else {
-      toast.success(`הקובץ לא ${fileNames[0]} קיים במועדפים`)
+      toast.success(`הקובץ ${fileNames[0]} לא קיים במועדפים`)
     }
   }
 
@@ -844,7 +847,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       // addToFavorites
       if (addToFavoritesCompareOneCommand) {
 
-        if (event.selectedRows?.length === 1 && !this.favorites.find(fav => fav.fileName === event.selectedRows[0].getValueByName('FileLeafRef'))) {
+        if (event.selectedRows?.length === 1 && !this.favorites.find(fav => fav.fileRef === event.selectedRows[0].getValueByName('FileRef'))) {
           addToFavoritesCompareOneCommand.visible = true
         } else {
           addToFavoritesCompareOneCommand.visible = false
@@ -853,7 +856,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
       // deleteFromFavorites
       if (deleteFromFavoritesCompareOneCommand) {
-        if (event.selectedRows?.length === 1 && this.favorites.find(fav => fav.fileName === event.selectedRows[0].getValueByName('FileLeafRef'))) {
+        if (event.selectedRows?.length === 1 && this.favorites.find(fav => fav.fileRef === event.selectedRows[0].getValueByName('FileRef'))) {
           deleteFromFavoritesCompareOneCommand.visible = true
         } else {
           deleteFromFavoritesCompareOneCommand.visible = false
