@@ -2,7 +2,7 @@ import { SelectedFile } from "../models/global.model";
 import axios, { AxiosError } from "axios";
 import { SPFI, SPFx } from "@pnp/sp";
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
-import PAService, { PaUrls } from "./authService.service";
+import PAService from "./authService.service";
 import Swal from "sweetalert2";
 import { Errors } from "../../errorConfig";
 
@@ -25,7 +25,7 @@ function getRelativeSite(fileRef: string) {
 
 // this function send a http to power automate to convert the file to pdf
 export async function ConvertToPdf(context: ListViewCommandSetContext, selectedItem: SelectedFile) {
-    const paService = new PAService(context);
+    const paService = new PAService(context, "https://prod-48.westeurope.logic.azure.com:443/workflows/60282bd80e29428c9094b301317c665c/triggers/manual/paths/invoke?api-version=2016-06-01");
 
     let baseUrl = 'https://epstin100.sharepoint.com';
 
@@ -40,7 +40,7 @@ export async function ConvertToPdf(context: ListViewCommandSetContext, selectedI
             libraryId: libraryId,
             itemId: itemId
         }
-        const data = await paService.post(PaUrls.CONVERT_TO_PDF, requestBody);
+        const data = await paService.post(paService.CONVERT_TO_PDF, requestBody);
         // if(data?.ok)
         Swal.fire({
             title: "הפעולה בוצעה בהצלחה!",

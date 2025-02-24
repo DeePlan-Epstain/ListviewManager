@@ -1,16 +1,18 @@
-import { SPHttpClientResponse, ISPHttpClientOptions, SPHttpClient } from "@microsoft/sp-http";
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
+import { SPHttpClientResponse, ISPHttpClientOptions, SPHttpClient } from "@microsoft/sp-http";
 import axios from "axios";
 
-export enum PaUrls {
-    CONVERT_TO_PDF = 'https://prod-48.westeurope.logic.azure.com:443/workflows/60282bd80e29428c9094b301317c665c/triggers/manual/paths/invoke?api-version=2016-06-01'
-}
+// export enum PaUrls {
+//     CONVERT_TO_PDF = 'https://prod-48.westeurope.logic.azure.com:443/workflows/60282bd80e29428c9094b301317c665c/triggers/manual/paths/invoke?api-version=2016-06-01'
+// }
 
 export default class PAService {
     private _context: ListViewCommandSetContext;
+    public CONVERT_TO_PDF: string;
 
-    constructor(private context: ListViewCommandSetContext) {
+    constructor(private context: ListViewCommandSetContext, url: string) {
         this._context = this.context;
+        this.CONVERT_TO_PDF = url
     };
 
     private async getAccessToken(): Promise<string> {
@@ -31,7 +33,7 @@ export default class PAService {
         return tokenJson.access_token;
     };
 
-    public async get(url: PaUrls) {
+    public async get(url: string) {
         const token = await this.getAccessToken();
 
         try {
@@ -50,7 +52,7 @@ export default class PAService {
         }
     }
 
-    public async post(url: PaUrls, body: any) {
+    public async post(url: string, body: any) {
         const token = await this.getAccessToken();
 
         try {

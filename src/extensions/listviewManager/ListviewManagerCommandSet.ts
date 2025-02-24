@@ -22,6 +22,7 @@ import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
 import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
+import { MergePDFProps } from "./components/MergePDF/MergePDF.cmp";
 import LinkToCategory, { LinkToCategoryProps } from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
@@ -39,6 +40,7 @@ import CreateDraft from "./service/createDraft.service";
 import toast, { Toaster } from 'react-hot-toast'; // Importing react-hot-toast
 import { spfi, SPFx } from "@pnp/sp";
 import './../ext.css'
+import MergePDF from "./components/MergePDF/MergePDF.cmp";
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -48,6 +50,7 @@ export interface IListviewManagerCommandSetProperties {
 
 const LOG_SOURCE: string = "ListviewManagerCommandSet";
 const FAVORITES_LIST_ID = '6f3d6257-4a9b-41fe-a847-487c942cd628'
+const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
   private dialogContainer: HTMLDivElement;
@@ -56,6 +59,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
   private typeSet: Set<string>;
+  private typeToConvert: Set<string>;
 
   private allowedUsers: string[] = [
     "EpsteinSystem@Epstein.co.il",
@@ -75,6 +79,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       this.spPortal = getSPByPath("https://epstin100.sharepoint.com/sites/EpsteinPortal", this.context);
       // Favorites list
       const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
+      // Convertible Types list
+      this.typeToConvert = new Set((await this.spPortal.web.lists.getById(CONVERTIBLE_TYPES_ID).items.select("Title")()).map(item => item.Title));
 
       const { Id, Email } = this.currUser
       const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === this.currUser.Email.trim().toLocaleLowerCase())
@@ -136,6 +142,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
     shoppingCartCompareOneCommand.visible = false
 
+    // mergeToPDF
+    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
+    mergeToPDFCompareOneCommand.visible = false
+
     // addToFavorites
     const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
     addToFavoritesCompareOneCommand.visible = false
@@ -158,8 +168,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   public async onExecute(event: IListViewCommandSetExecuteEventParameters): Promise<void> {
 
     const fullUrl = window.location.href;
-    console.log(fullUrl);
-
     // Extract the "id" parameter from the query string
     const urlParams = new URLSearchParams(fullUrl.split('?')[1]);
     const folderPath = urlParams.get('id');
@@ -173,8 +181,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
       finalPath = fullUrl.split('/Forms')[0] // Assuming "Forms" is in the URL structure
     }
-    console.log(finalPath);
-
 
     const selectedFiles = event.selectedRows.map((SR: any) => {
       const keys = SR._values.keys();
@@ -261,6 +267,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         if (event.selectedRows.length > 0) {
           // Process the selected rows and retrieve contacts
           await this.selectedRowsDeleteFromFavorites(Array.from(event.selectedRows));
+        }
+        break;
+      case "mergeToPDF":
+        // Check if the user selected some items
+        if (event.selectedRows.length > 0) {
+          // Process the selected rows and retrieve contacts
+          await this.selectedRowsToMergePDF(Array.from(event.selectedRows));
         }
         break;
       default:
@@ -781,6 +794,45 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
   }
 
+  private async selectedRowsToMergePDF(selectedRows: any[]): Promise<void> {
+    const selectedFiles: { Title: string; RelativePath: string; SiteAdress: string }[] = [];
+
+    for (const row of selectedRows) {
+      try {
+        const fileName = row.getValueByName("FileLeafRef").toString();
+        const fileRef = row.getValueByName("FileRef").toString();
+        const fileUrl = row.getValueByName("ServerRedirectedEmbedUrl").toString();
+
+        // Step 1: Clean the URL to get the tenant and site information
+        const cleanedUrl = fileUrl.split("/_layout")[0];
+
+        // Create an object with file name, cleaned file reference, and cleaned URL
+        const fileData = {
+          Title: fileName,
+          RelativePath: fileRef,
+          SiteAdress: cleanedUrl
+        };
+
+        // Add the object to the selectedFiles array
+        selectedFiles.push(fileData);
+
+      } catch (error) {
+        // Show error toast notification
+        toast.error(`לא ניתן להוסיף את הקובץ לסל. אנא נסה שוב`);
+      }
+    }
+
+    // Render the MergePDF component after processing all selected rows
+    const element: React.ReactElement<MergePDFProps> = React.createElement(MergePDF, {
+      context: this.context,
+      selectedItems: selectedFiles, // Pass the array of file data objects
+      unMountDialog: this._closeDialogContainer,
+    });
+
+    ReactDom.render(element, this.dialogContainer);
+  }
+
+
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
@@ -797,6 +849,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
     const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
     const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
+    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
 
     if (compareOneCommand) {
       compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -860,6 +913,17 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           deleteFromFavoritesCompareOneCommand.visible = true
         } else {
           deleteFromFavoritesCompareOneCommand.visible = false
+        }
+      }
+
+      // mergeToPDF
+      if (mergeToPDFCompareOneCommand) {
+        if (event.selectedRows?.length > 0) {
+          const fileExt = event.selectedRows[0].getValueByName(".fileType").toLowerCase();
+
+          mergeToPDFCompareOneCommand.visible = this.typeToConvert.has(fileExt);
+        } else {
+          mergeToPDFCompareOneCommand.visible = false;
         }
       }
 

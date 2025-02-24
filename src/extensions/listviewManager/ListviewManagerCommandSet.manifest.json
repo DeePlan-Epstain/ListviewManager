@@ -15,6 +15,13 @@
       "iconImageUrl": "./assets/imgs/cart.svg",
       "type": "command"
     },
+    "mergeToPDF": {
+      "title": {
+        "default": "איחוד ל-PDF"
+      },
+      "iconImageUrl": "./assets/imgs/merge.svg",
+      "type": "command"
+    },
     "addToFavorites": {
       "title": {
         "default": "הוסף למועדפים"
