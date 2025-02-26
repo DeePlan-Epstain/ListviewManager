@@ -691,6 +691,12 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       FSObjTypes.push(FSObjType)
       Projects.push(Project)
     });
+    const libraryRoot = this.context.pageContext.list.serverRelativeUrl;
+    let level2 = ''
+    if (libraryRoot.split('/').length + 1 === fileRefs[0].split('/').length) {
+    } else {
+      level2 = '/' + fileRefs[0].split('/')[4]
+    }
 
     const navTreeListIds = '41d92fdd-1469-475b-8d19-9fe47cca24be'
     const siteId = this.context.pageContext.site.id
@@ -709,43 +715,47 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       console.error(error)
     }
 
-    const path = linkTitle ? `${linkTitle[0].Title}/${this.context.pageContext.list.title}` : ''
+    const path = linkTitle ? `${linkTitle[0].Title}/${this.context.pageContext.list.title}${level2}` : ''
 
     const recoveryList = this.favorites
 
-    if (!this.favorites.find(fav => fav.fileRef === fileRefs[0])) {
-      try {
+    for (let i = 0; i < selectedRows.length; i++) {
+      if (!this.favorites.find(fav => fav.fileRef === fileRefs[i])) {
+
         const payload = {
-          fileName: fileNames[0],
-          fileRef: fileRefs[0],
-          documentIdUrl: documentIdUrls[0],
+          fileName: fileNames[i],
+          fileRef: fileRefs[i],
+          documentIdUrl: documentIdUrls[i],
           serverRelativeUrl: this.context.pageContext.site.serverRelativeUrl,
           absoluteUrl: this.context.pageContext.site.absoluteUrl,
-          itemId: itemIds[0],
+          itemId: itemIds[i],
           libraryId: this.context.pageContext.list.id["_guid"],
-          FSObjType: FSObjTypes[0],
+          FSObjType: FSObjTypes[i],
           path: path,
-          project: Projects[0]
+          project: Projects[i]
         }
-
         this.favorites.push(payload)
+      }
+    }
+
+    if (this.favorites.length > 0) {
+      try {
         const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
 
         await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
           favorites: JSON.stringify(this.favorites)
         }).then(() => {
-          toast.success(`הקובץ ${fileNames[0]} נוסף למועדפים בהצלחה!`);
+          toast.success(`הקבצים נוספו למועדפים בהצלחה!`);
         })
-
       } catch (error) {
         this.favorites = recoveryList
         console.error(error)
-        toast.error(`הוספת הקובץ ${fileNames[0]} נכשלה.`)
+        toast.error('הוספת הקבצים למועדפים נכשלה.')
       }
-
     } else {
-      toast.success(`הקובץ ${fileNames[0]} קיים במועדפים`)
+      toast.success(`הקבצים קיימים במועדפים.`)
     }
+
   }
 
   private async selectedRowsDeleteFromFavorites(selectedRows: any[]): Promise<void> {
@@ -770,27 +780,25 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     const recoveryList = this.favorites
 
-    if (this.favorites.find(fav => fav.fileRef === fileRefs[0])) {
-      try {
-
-        this.favorites = this.favorites.filter(fav => fav.fileRef !== fileRefs[0])
-
-        const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
-
-        await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
-          favorites: JSON.stringify(this.favorites)
-        }).then(() => {
-          toast.success(`הקובץ ${fileNames[0]} הוסר מהמועדפים בהצלחה!`);
-        })
-
-      } catch (error) {
-        this.favorites = recoveryList
-        console.error(error)
-        toast.error(`הסרת הקובץ ${fileNames[0]} נכשלה.`)
+    for (let i = 0; i < selectedRows.length; i++) {
+      if (this.favorites.find(fav => fav.fileRef === fileRefs[i])) {
+        this.favorites = this.favorites.filter(fav => fav.fileRef !== fileRefs[i])
       }
+    }
 
-    } else {
-      toast.success(`הקובץ ${fileNames[0]} לא קיים במועדפים`)
+    try {
+      const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
+
+      await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
+        favorites: JSON.stringify(this.favorites)
+      }).then(() => {
+        toast.success('הקבצים הוסרו מהמועדפים בהצלחה!')
+      })
+
+    } catch (error) {
+      this.favorites = recoveryList
+      console.error(error)
+      toast.error('הסרת הקבצים נכשלה.')
     }
   }
 
@@ -899,20 +907,25 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
       // addToFavorites
       if (addToFavoritesCompareOneCommand) {
-
-        if (event.selectedRows?.length === 1 && !this.favorites.find(fav => fav.fileRef === event.selectedRows[0].getValueByName('FileRef'))) {
-          addToFavoritesCompareOneCommand.visible = true
+        if (event.selectedRows?.length > 0) {
+          const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
+          const allFavoritesFiles = this.favorites.map(fav => fav.fileRef);
+          // Only show the button if every selected file is NOT in favorites.
+          addToFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
         } else {
-          addToFavoritesCompareOneCommand.visible = false
+          addToFavoritesCompareOneCommand.visible = false;
         }
       }
 
       // deleteFromFavorites
       if (deleteFromFavoritesCompareOneCommand) {
-        if (event.selectedRows?.length === 1 && this.favorites.find(fav => fav.fileRef === event.selectedRows[0].getValueByName('FileRef'))) {
-          deleteFromFavoritesCompareOneCommand.visible = true
+        if (event.selectedRows?.length > 0) {
+          const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
+          const allFavoritesFiles = this.favorites.map(fav => fav.fileRef);
+          // Only show the button if every selected file IS in favorites.
+          deleteFromFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
         } else {
-          deleteFromFavoritesCompareOneCommand.visible = false
+          deleteFromFavoritesCompareOneCommand.visible = false;
         }
       }
 
