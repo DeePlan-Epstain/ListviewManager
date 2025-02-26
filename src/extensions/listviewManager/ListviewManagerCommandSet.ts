@@ -102,6 +102,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       console.error('onInit error:', error)
     }
 
+    // Listen for updates from the modal
+    window.addEventListener('favoritesUpdated', this.refreshFavorites.bind(this));
+
     this.dialogContainer = document.body.appendChild(
       document.createElement("div")
     );
@@ -656,12 +659,27 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
 
     const { Id, Email } = this.currUser
-    const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === this.currUser.Email.trim().toLocaleLowerCase())
+    const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === Email.trim().toLocaleLowerCase())
     if (allListItemsFavorites && userFound) {
       // user exists in the list
       return JSON.parse(userFound.favorites)
     } else {
       return []
+    }
+  }
+
+  private async refreshFavorites(): Promise<void> {
+    console.log('favoritesUpdated event received');
+    const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
+
+    const { Id, Email } = this.currUser
+    const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === Email.trim().toLocaleLowerCase())
+    if (allListItemsFavorites && userFound) {
+      // user exists in the list
+      this.favorites = JSON.parse(userFound.favorites)
+      console.log('favoritesUpdated updated');
+    } else {
+      this.favorites = []
     }
   }
 
