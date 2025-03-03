@@ -15,15 +15,11 @@ import ApproveDocument, {
   ApproveDocumentProps,
 } from "./components/ApproveDocument/ApproveDocument.cmp";
 import ModalExt from "../../extensions/listviewManager/components/FolderHierarchy/ModalExt";
-import MoveFile, { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
-// import RenameFile, {
-//   IRenameFileProps,
-// } from "./components/RenameFile/RenameFile";
+import { MoveFileProps } from "./components/MoveFile/MoveFile.cmp";
 import { PermissionKind } from "@pnp/sp/security";
-import { decimalToBinaryArray } from "./service/util.service";
 import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { MergePDFProps } from "./components/MergePDF/MergePDF.cmp";
-import LinkToCategory, { LinkToCategoryProps } from "./components/LinkToCategory/LinkToCategory";
+import LinkToCategory from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
 import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
@@ -37,10 +33,10 @@ import { IMeetingInvProps } from "./components/MeetingInv/IMeetingInvProps";
 import { IDraftProps } from "./components/Draft/IDraftProps";
 import Draft from "./components/Draft/Draft.cmp"
 import CreateDraft from "./service/createDraft.service";
-import toast, { Toaster } from 'react-hot-toast'; // Importing react-hot-toast
-import { spfi, SPFx } from "@pnp/sp";
+import toast, { Toaster } from 'react-hot-toast';
 import './../ext.css'
 import MergePDF from "./components/MergePDF/MergePDF.cmp";
+import { Version } from '@microsoft/sp-core-library';
 
 const { solution } = require("../../../config/package-solution.json");
 
@@ -167,6 +163,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     return Promise.resolve();
   }
 
+  protected get dataVersion(): Version {
+    return Version.parse(solution.version);
+  }
 
   public async onExecute(event: IListViewCommandSetExecuteEventParameters): Promise<void> {
 
