@@ -102,11 +102,14 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
         this.setState({ isSave: true })
         if (this.validate()) {
             try {
-
+                
                 const destinationUrl = `${this.props.finalPath}/${this.state.NewFolderName}`;
                 const rootSiteUrl = `${window.location.origin}/sites/${window.location.pathname.split('/')[2]}`;
-                const libraryName = this.props.finalPath.replace(rootSiteUrl + "/", '')
+                const libraryName = this.props.finalPath.replace(/.*\/sites\/[^\/]+\//, '');
+                console.log(rootSiteUrl);
+                console.log(libraryName);
 
+                
                 console.log("destinationUrl", destinationUrl);
                 const flowUrl = "https://prod-213.westeurope.logic.azure.com:443/workflows/5150c75426064ee28ba6dbad9948394d/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=T_aykz6E_7pktPhB30vv1u95t-568u8WoHprU6A6q7w";
                 const requestBody = {
@@ -231,7 +234,7 @@ export default class ModalCreateProject extends React.Component<ModalExtProps, M
                 <ThemeProvider theme={theme}>
 
 
-                    <div id='modal-back2' className='modal-back2' onClick={this.closeModal}>
+                    <div id='modal-back2' className='modal-back2' >
                         <div style={{ display: "flex", justifyContent: "center", flexDirection: "column" }} id='modal-content2' className='modal-content2' onClick={(e) => { e.stopPropagation() }}>
                             {!this.state.success &&
                                 <>

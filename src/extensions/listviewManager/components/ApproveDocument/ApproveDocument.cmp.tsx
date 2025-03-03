@@ -314,7 +314,7 @@ export default function ReviewDocument({
                             </span>
                           )}
                               <label>
-                              *נדרש להוסיף נמען באנגלית
+                              נדרש להוסיף נמען באנגלית
                               </label>
                       </div>
 
