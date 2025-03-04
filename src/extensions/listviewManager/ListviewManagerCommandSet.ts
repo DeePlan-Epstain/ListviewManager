@@ -46,6 +46,7 @@ export interface IListviewManagerCommandSetProperties {
 
 const LOG_SOURCE: string = "ListviewManagerCommandSet";
 const FAVORITES_LIST_ID = '6f3d6257-4a9b-41fe-a847-487c942cd628'
+const FAVORITES_ADDIN_LIST_ID = 'eccc2588-4c91-4259-bd18-f2d7c780803d';
 const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
@@ -62,6 +63,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   ].map((e) => e.toLocaleLowerCase());
 
   private favorites: any[] = []
+  private favoritesAddin: any[] = []
   private spPortal: SPFI = null
 
   public async onInit(): Promise<void> {
@@ -93,6 +95,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           favorites: JSON.stringify([])
         })
       }
+
+      this.favoritesAddin = await this.getFavoritesAddin()
 
     } catch (error) {
       console.error('onInit error:', error)
@@ -669,16 +673,38 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
   private async refreshFavorites(): Promise<void> {
     console.log('favoritesUpdated event received');
-    const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
+    try {
+      const allListItemsFavorites = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items()
 
-    const { Id, Email } = this.currUser
-    const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === Email.trim().toLocaleLowerCase())
-    if (allListItemsFavorites && userFound) {
+      const { Id, Email } = this.currUser
+      const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === Email.trim().toLocaleLowerCase())
+      if (allListItemsFavorites && userFound) {
+        // user exists in the list
+        this.favorites = JSON.parse(userFound.favorites)
+        console.log('favoritesUpdated updated');
+      } else {
+        this.favorites = []
+      }
+      this.favoritesAddin = await this.getFavoritesAddin()
+    } catch (error) {
+      console.log('Error in refreshFavorites: ', error)
+    }
+  }
+
+  private async getFavoritesAddin(): Promise<any[]> {
+    const allListItemsFavoritesAddin = await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items()
+
+    const userFound = allListItemsFavoritesAddin.find(
+      user =>
+        String(user?.Title?.trim() + '@Epstein.co.il').toLowerCase() ===
+        this.currUser.Email?.trim().toLowerCase()
+    );
+
+    if (allListItemsFavoritesAddin && userFound) {
       // user exists in the list
-      this.favorites = JSON.parse(userFound.favorites)
-      console.log('favoritesUpdated updated');
+      return JSON.parse(userFound.Items)
     } else {
-      this.favorites = []
+      return []
     }
   }
 
@@ -722,14 +748,22 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     try {
       linkTitle = await this.spPortal.web.lists.getById(navTreeListIds).items.filter(`SiteId eq '${siteId}'`)()
     } catch (error) {
-      console.error(error)
+      console.error('Error linkTitle', error)
       return
     }
 
     try {
       this.favorites = await this.getFavorites()
     } catch (error) {
-      console.error(error)
+      console.error('Error getFavorites', error)
+    }
+
+    let isModified: boolean = false
+
+    try {
+      this.favoritesAddin = await this.getFavoritesAddin()
+    } catch (error) {
+      console.error('Error getFavoritesAddin', error)
     }
 
     const path = linkTitle ? `${linkTitle[0].Title}/${this.context.pageContext.list.title}${level2}` : ''
@@ -739,19 +773,51 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     for (let i = 0; i < selectedRows.length; i++) {
       if (!this.favorites.find(fav => fav.fileRef === fileRefs[i])) {
 
-        const payload = {
-          fileName: fileNames[i],
-          fileRef: fileRefs[i],
-          documentIdUrl: documentIdUrls[i],
-          serverRelativeUrl: this.context.pageContext.site.serverRelativeUrl,
-          absoluteUrl: this.context.pageContext.site.absoluteUrl,
-          itemId: itemIds[i],
-          libraryId: this.context.pageContext.list.id["_guid"],
-          FSObjType: FSObjTypes[i],
-          path: path,
-          project: Projects[i]
+        if (selectedRows[i].getValueByName("FSObjType").toString() === '0') {
+          const payload = {
+            fileName: fileNames[i],
+            fileRef: fileRefs[i],
+            documentIdUrl: documentIdUrls[i],
+            serverRelativeUrl: this.context.pageContext.site.serverRelativeUrl,
+            absoluteUrl: this.context.pageContext.site.absoluteUrl,
+            itemId: itemIds[i],
+            libraryId: this.context.pageContext.list.id["_guid"],
+            FSObjType: FSObjTypes[i],
+            path: path,
+            project: Projects[i]
+          }
+          this.favorites.push(payload)
         }
-        this.favorites.push(payload)
+
+        if (selectedRows[i].getValueByName("FSObjType").toString() === '1'
+          && !this.favoritesAddin.find(favAddin => favAddin.Path === selectedRows[i].getValueByName("FileRef").toString())) {
+          console.log('isModified')
+          isModified = true
+          const payloadAddin = {
+            Title: fileNames[i],
+            Path: fileRefs[i],
+            Type: 'Folder'
+          }
+          this.favoritesAddin.push(payloadAddin)
+        }
+      }
+    }
+
+    if (this.favoritesAddin.length > 0 && isModified) {
+      try {
+        const allListItemsFavoritesAddin = await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items()
+
+        const userFound = allListItemsFavoritesAddin.find(
+          user =>
+            String(user?.Title?.trim() + '@Epstein.co.il').toLowerCase() ===
+            this.currUser.Email?.trim().toLowerCase()
+        );
+
+        await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items.getById(userFound.Id).update({
+          Items: JSON.stringify(this.favoritesAddin)
+        })
+      } catch (error) {
+        console.error('Error in adding favoritesAddin', error)
       }
     }
 
@@ -795,11 +861,43 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       console.error(error)
     }
 
+
+    let isExist: boolean = false
+
+    try {
+      this.favoritesAddin = await this.getFavoritesAddin()
+    } catch (error) {
+      console.error('Error getFavoritesAddin', error)
+    }
+
     const recoveryList = this.favorites
 
     for (let i = 0; i < selectedRows.length; i++) {
       if (this.favorites.find(fav => fav.fileRef === fileRefs[i])) {
         this.favorites = this.favorites.filter(fav => fav.fileRef !== fileRefs[i])
+      }
+
+      if (this.favoritesAddin.find(favAddin => favAddin.Path === fileRefs[i])) {
+        isExist = true
+        this.favoritesAddin = this.favoritesAddin.filter(favAddin => favAddin.Path !== fileRefs[i])
+      }
+    }
+
+    if (isExist) {
+      try {
+        const allListItemsFavoritesAddin = await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items()
+
+        const userFound = allListItemsFavoritesAddin.find(
+          user =>
+            String(user?.Title?.trim() + '@Epstein.co.il').toLowerCase() ===
+            this.currUser.Email?.trim().toLowerCase()
+        );
+
+        await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items.getById(userFound.Id).update({
+          Items: JSON.stringify(this.favoritesAddin)
+        })
+      } catch (error) {
+        console.error('Error in deleting favoritesAddin', error)
       }
     }
 
@@ -926,7 +1024,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       if (addToFavoritesCompareOneCommand) {
         if (event.selectedRows?.length > 0) {
           const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
-          const allFavoritesFiles = this.favorites.map(fav => fav.fileRef);
+          const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
           // Only show the button if every selected file is NOT in favorites.
           addToFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
         } else {
@@ -938,7 +1036,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       if (deleteFromFavoritesCompareOneCommand) {
         if (event.selectedRows?.length > 0) {
           const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
-          const allFavoritesFiles = this.favorites.map(fav => fav.fileRef);
+          const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
           // Only show the button if every selected file IS in favorites.
           deleteFromFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
         } else {
