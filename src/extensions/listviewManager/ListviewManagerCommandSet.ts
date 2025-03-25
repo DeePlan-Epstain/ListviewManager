@@ -96,7 +96,25 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
       }
 
-      this.favoritesAddin = await this.getFavoritesAddin()
+      const allListItemsFavoritesAddin = await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items()
+
+      const userFoundAddin = allListItemsFavoritesAddin.find(
+        user =>
+          String(user?.Title?.trim() + '@Epstein.co.il').toLowerCase() ===
+          this.currUser.Email?.trim().toLowerCase()
+      );
+
+      if (allListItemsFavoritesAddin && userFoundAddin) {
+        // user exists in the list
+        this.favoritesAddin = JSON.parse(userFoundAddin.Items)
+      } else {
+        // user do not exist in the list                
+        await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items.add({
+          Title: Email?.split('@')[0] || 'User',
+          Items: JSON.stringify([])
+        })
+      }
+
 
     } catch (error) {
       console.error('onInit error:', error)
@@ -812,10 +830,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
             String(user?.Title?.trim() + '@Epstein.co.il').toLowerCase() ===
             this.currUser.Email?.trim().toLowerCase()
         );
-
-        await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items.getById(userFound.Id).update({
-          Items: JSON.stringify(this.favoritesAddin)
-        })
+        if (userFound) {
+          await this.spPortal.web.lists.getById(FAVORITES_ADDIN_LIST_ID).items.getById(userFound.Id).update({
+            Items: JSON.stringify(this.favoritesAddin)
+          })
+        } else {
+          throw new Error('User not found in favoritesAddin list')
+        }
       } catch (error) {
         console.error('Error in adding favoritesAddin', error)
       }
@@ -825,14 +846,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       try {
         const item = await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.filter(`email eq '${this.currUser.Email}'`)()
 
-        await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
-          favorites: JSON.stringify(this.favorites)
-        }).then(() => {
-          toast.success(`הקבצים נוספו למועדפים בהצלחה!`);
-        })
+        if (item) {
+          await this.spPortal.web.lists.getById(FAVORITES_LIST_ID).items.getById(item[0].Id).update({
+            favorites: JSON.stringify(this.favorites)
+          }).then(() => {
+            toast.success(`הקבצים נוספו למועדפים בהצלחה!`);
+          })
+        } else {
+          throw new Error('User not found in favorites list')
+        }
+
       } catch (error) {
         this.favorites = recoveryList
-        console.error(error)
+        console.error('Error in adding favorites', error)
         toast.error('הוספת הקבצים למועדפים נכשלה.')
       }
     } else {
