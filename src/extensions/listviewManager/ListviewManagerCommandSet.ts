@@ -37,7 +37,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import './../ext.css'
 import MergePDF from "./components/MergePDF/MergePDF.cmp";
 import { Version } from '@microsoft/sp-core-library';
-
+import { clickEvent } from './service/thirdPartyOpen.service'
 const { solution } = require("../../../config/package-solution.json");
 
 export interface IListviewManagerCommandSetProperties {
@@ -71,6 +71,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
+    clickEvent(this.context);
     try {
       this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
       this.currUser = await this.sp.web.currentUser();
