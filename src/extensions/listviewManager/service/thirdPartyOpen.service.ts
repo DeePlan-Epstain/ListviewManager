@@ -1,5 +1,6 @@
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
 import { getGraph, getSP } from "../../../pnpjs-config";
+import { SPFI, SPFx } from "@pnp/sp";
 
 export async function getUserAADId(context: ListViewCommandSetContext): Promise<string> {
     try {
@@ -28,14 +29,17 @@ export async function clickEvent(context: ListViewCommandSetContext) {
     const siteId = context.pageContext.site?.id.toString();
     const userEmail = context.pageContext.user?.email;
     const webUrl = context.pageContext.site?.absoluteUrl;
-
+    const sp: SPFI = new SPFI('https://epstin100.sharepoint.com/sites/EpsteinPortal').using(SPFx(context));
+    const validTypesListId = 'd88944fd-fa4c-4d7e-8334-df52e5e5e247';
+    const items = await sp.web.lists.getById(validTypesListId).items.select('Title')();
+    const validTypes = items.map(item => item.Title);
     window.addEventListener('click', (event) => {
         const target = event.target as HTMLElement;
         const fileName = target.innerText.trim();
         const isFieldRenderer = target.getAttribute("data-automationid") === "FieldRenderer-name";
-
-        if (!isPdfOrDwg(fileName) || !isFieldRenderer) return;
-
+        const validType = isPdfOrDwg(fileName, context, validTypes);
+        // const validType = await isPdfOrDwg(fileName, context);
+        if (!validType || !isFieldRenderer) return;
         handleLinkClick(event, siteId, listID, userEmail, webUrl, userId, fileName, context)
     }, true);
     return Promise.resolve();
@@ -44,7 +48,6 @@ export async function clickEvent(context: ListViewCommandSetContext) {
 export async function handleLinkClick(event: MouseEvent, siteId: string, listId: string, userEmail: string, webUrl: string, userId: string, fileName: string, context: ListViewCommandSetContext): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-
     const fileUrl = await buildFileUrl(fileName, context) //builds a full link
     let fileId = ''
 
@@ -57,8 +60,15 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
     openFileInApp(siteId, listId, userEmail, webUrl, userId, fileId, fileName);
 }
 
-export function isPdfOrDwg(fileName: string): boolean {
-    return fileName.toLowerCase().endsWith('.pdf') || fileName.toLowerCase().endsWith('.dwg');
+export function isPdfOrDwg(fileName: string, context: ListViewCommandSetContext, validTypes: string[]): boolean {
+    console.log("items: ", validTypes);
+    let isValidType = false;
+    validTypes.forEach(type => {
+        if (fileName.toLocaleLowerCase().endsWith(type)) {
+            isValidType = true;
+        }
+    })
+    return isValidType;
 }
 
 export function openFileInApp(siteId: string, listId: string, userEmail: string, webUrl: string, userId: string, fileId: string, fileName: string,): void {
