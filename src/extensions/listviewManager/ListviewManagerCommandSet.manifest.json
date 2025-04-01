@@ -91,7 +91,7 @@
     },
     "draft": {
       "title": {
-        "default": "שיתוף קובץ במייל"
+        "default": "העבר קובץ במייל"
       },
       "iconImageUrl": "./assets/imgs/share.svg",
       "type": "command"
