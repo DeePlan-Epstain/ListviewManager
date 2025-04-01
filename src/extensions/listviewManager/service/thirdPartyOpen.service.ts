@@ -61,7 +61,6 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
 }
 
 export function isPdfOrDwg(fileName: string, context: ListViewCommandSetContext, validTypes: string[]): boolean {
-    console.log("items: ", validTypes);
     let isValidType = false;
     validTypes.forEach(type => {
         if (fileName.toLocaleLowerCase().endsWith(type)) {

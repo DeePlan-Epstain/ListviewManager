@@ -38,6 +38,7 @@ import './../ext.css'
 import MergePDF from "./components/MergePDF/MergePDF.cmp";
 import { Version } from '@microsoft/sp-core-library';
 import { clickEvent } from './service/thirdPartyOpen.service'
+import { DnDService } from "./service/DnD.service";
 const { solution } = require("../../../config/package-solution.json");
 
 export interface IListviewManagerCommandSetProperties {
@@ -50,6 +51,7 @@ const FAVORITES_ADDIN_LIST_ID = 'eccc2588-4c91-4259-bd18-f2d7c780803d';
 const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
+  private dndService = new DnDService(this.context);
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
   private graph: GraphFI;
@@ -62,16 +64,18 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     "EpsteinSystem@Epstein.co.il",
   ].map((e) => e.toLocaleLowerCase());
 
-  private favorites: any[] = []
-  private favoritesAddin: any[] = []
-  private spPortal: SPFI = null
+  private favorites: any[] = [];
+  private favoritesAddin: any[] = [];
+  private spPortal: SPFI = null;
 
   public async onInit(): Promise<void> {
     console.log(solution.name + ":", solution.version);
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
+    this.dndService.startDnDBlock();
     clickEvent(this.context);
+
     try {
       this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
       this.currUser = await this.sp.web.currentUser();
@@ -303,21 +307,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         break;
       default:
         throw new Error("Unknown command");
-    }
-  }
-
-  private preventFolderDrop(event: DragEvent): void {
-    // Check if the item being dragged is a folder
-    if (event?.dataTransfer?.items?.length) {
-      for (let i = 0; i < event.dataTransfer.items.length; i++) {
-        const item = event.dataTransfer.items[i].webkitGetAsEntry();
-        if (item && item.isDirectory) {
-          event.preventDefault();
-          event.stopPropagation();
-          alert("Folder upload is not allowed.");
-          return;
-        }
-      }
     }
   }
 
@@ -981,7 +970,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     ReactDom.render(element, this.dialogContainer);
   }
-
 
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
