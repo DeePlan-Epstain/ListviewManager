@@ -39,6 +39,7 @@ import MergePDF from "./components/MergePDF/MergePDF.cmp";
 import { Version } from '@microsoft/sp-core-library';
 import { clickEvent } from './service/thirdPartyOpen.service'
 import { DnDService } from "./service/DnD.service";
+import { FillingModal, FillingModalProps } from "./components/FillingModal/FillingModal.cmp";
 const { solution } = require("../../../config/package-solution.json");
 
 export interface IListviewManagerCommandSetProperties {
@@ -51,7 +52,7 @@ const FAVORITES_ADDIN_LIST_ID = 'eccc2588-4c91-4259-bd18-f2d7c780803d';
 const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
-  private dndService = new DnDService(this.context);
+  private dndService = new DnDService(this.renderFillingModal.bind(this));
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
   private graph: GraphFI;
@@ -565,6 +566,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     )
 
     ReactDom.render(element, this.dialogContainer)
+  }
+
+  private renderFillingModal(foldersMap: Map<string, File[]>) {
+    const element: React.ReactElement<FillingModalProps> = React.createElement(
+      FillingModal,
+      {
+        sp: this.sp,
+        foldersMap,
+        closeModal: this._closeDialogContainer
+      }
+    );
+
+    ReactDom.render(element, this.dialogContainer);
   }
 
   private async selectedRowsToDraft(selectedRows: any[]): Promise<void> {

@@ -1,11 +1,9 @@
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
-import { files } from "jszip";
-
 export class DnDService {
-    private _context: ListViewCommandSetContext;
+    private renderFillingModal: (foldersMap: Map<string, File[]>) => void;
 
-    constructor(context: ListViewCommandSetContext) {
-        this._context = context;
+    constructor(renderFillingModal: (foldersMap: Map<string, File[]>) => void) {
+        this.renderFillingModal = renderFillingModal;
     }
 
     public startDnDBlock(isSecondTime?: boolean) {
@@ -66,7 +64,8 @@ export class DnDService {
         }
 
         await Promise.all(promises);
-        console.log('foldersMap:', foldersMap);
+        // console.log('foldersMap:', foldersMap);
+        this.renderFillingModal(foldersMap);
     }
 
     private async readDirectory(dirEntry: any, parentPath: string = '', folderMap = new Map<string, File[]>())
