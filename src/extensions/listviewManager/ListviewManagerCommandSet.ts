@@ -71,6 +71,13 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
+
+    this.initExt();
+
+    return Promise.resolve();
+  }
+
+  private async initExt() {
     clickEvent(this.context);
     try {
       this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
@@ -182,8 +189,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
     }
     this.typeSet = await getConvertibleTypes(this.context);
-
-    return Promise.resolve();
   }
 
   protected get dataVersion(): Version {
