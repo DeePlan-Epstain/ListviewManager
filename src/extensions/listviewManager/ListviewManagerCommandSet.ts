@@ -122,7 +122,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           Items: JSON.stringify([])
         })
       }
-
+      this.typeSet = await getConvertibleTypes(this.context);
 
     } catch (error) {
       console.error('onInit error:', error)
@@ -188,7 +188,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
     }
-    this.typeSet = await getConvertibleTypes(this.context);
   }
 
   protected get dataVersion(): Version {
@@ -1016,7 +1015,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       if (compareFiveCommand) {
         compareFiveCommand.visible = event.selectedRows?.length === 1
           && event.selectedRows[0]?.getValueByName('FSObjType') == 0
-          && this.typeSet.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
+          && this.typeSet?.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
         // event.selectedRows[0].getValueByName("fileSize") > 0;
       }
 
@@ -1081,7 +1080,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         if (event.selectedRows?.length > 0) {
           const fileExt = event.selectedRows[0].getValueByName(".fileType").toLowerCase();
 
-          mergeToPDFCompareOneCommand.visible = this.typeToConvert.has(fileExt);
+          mergeToPDFCompareOneCommand.visible = this.typeToConvert?.has(fileExt);
         } else {
           mergeToPDFCompareOneCommand.visible = false;
         }
