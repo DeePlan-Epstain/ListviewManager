@@ -94,7 +94,7 @@ export default function TreeFolders({ context, isClose, fileToSave, fileName }: 
       );
 
       // Save the generated file to the specified folder
-      sp.web.getFolderByServerRelativePath(targetLibraryUrl).files.addUsingPath(finalFileName, fileBlob, { Overwrite: true });
+      sp.web.getFolderByServerRelativePath(targetLibraryUrl).files.addUsingPath(finalFileName, fileBlob, { EnsureUniqueFileName: true });
 
     } catch (error) {
       console.error("Error creating link file:", error);
