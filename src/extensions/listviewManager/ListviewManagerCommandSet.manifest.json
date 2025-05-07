@@ -68,13 +68,6 @@
       "iconImageUrl": "./assets/imgs/zip.svg",
       "type": "command"
     },
-    "External_Sharing": {
-      "title": {
-        "default": "שיתוף קובץ במייל"
-      },
-      "iconImageUrl": "./assets/imgs/share.svg",
-      "type": "command"
-    },
     "linkToCategory": {
       "title": {
         "default": "קישור לקטגוריה"

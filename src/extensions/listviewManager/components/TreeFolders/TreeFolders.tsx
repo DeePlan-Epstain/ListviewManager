@@ -159,7 +159,7 @@ export default function TreeFolders({ context, isClose, fileToSave, fileName }: 
               >
                 סגירה</Button>
               <Button
-                disabled={selectedFolder === null}
+                disabled={selectedFolder && selectedFolder?.ServerRelativeUrl === context.pageContext.web.serverRelativeUrl}
                 onClick={() => onFolderSelect(selectedFolder)}
                 className={styles.button}
                 endIcon={<IconButton disableRipple style={{ color: "#1976d2", margin: "0px" }}><CheckIcon /></IconButton>}
