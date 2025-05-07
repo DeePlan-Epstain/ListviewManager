@@ -36,9 +36,9 @@ export async function clickEvent(context: ListViewCommandSetContext) {
     window.addEventListener('click', (event) => {
         const target = event.target as HTMLElement;
         const fileName = target.innerText.trim();
-        const isFieldRenderer = target.getAttribute("data-automationid") === "FieldRenderer-name";
+        // const isFieldRenderer = target.getAttribute("data-automationid") === "FieldRenderer-name";
+        const isFieldRenderer = target.getAttribute("data-id") === "heroField";
         const validType = isPdfOrDwg(fileName, context, validTypes);
-        // const validType = await isPdfOrDwg(fileName, context);
         if (!validType || !isFieldRenderer) return;
         handleLinkClick(event, siteId, listID, userEmail, webUrl, userId, fileName, context)
     }, true);
@@ -49,6 +49,7 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
     event.preventDefault();
     event.stopPropagation();
     const fileUrl = await buildFileUrl(fileName, context) //builds a full link
+    
     let fileId = ''
 
     try {
