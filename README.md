@@ -19,7 +19,10 @@ Short summary on functionality and used technologies.
 
 ## Node version
 
+npm i - on node version:
 > 14.15.0
+gulp serve / npm start - on node version:
+> 16.15.1
 
 ## Solution
 

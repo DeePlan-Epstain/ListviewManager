@@ -8,6 +8,7 @@ import "@pnp/sp/batching";
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/folders";
 import "@pnp/sp/items/get-all";
+import "@pnp/sp/search";
 import "@pnp/sp/site-users"
 import { spfi, SPFI, SPFx } from "@pnp/sp";
 
