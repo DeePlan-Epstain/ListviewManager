@@ -35,27 +35,43 @@ export async function clickEvent(context: ListViewCommandSetContext) {
         const target = event.target as HTMLElement;
         const fileName = target.innerText.trim();
 
-        // const isFieldRenderer = target.getAttribute("data-automationid") === "FieldRenderer-name";  // no longer avilable
+        const isFieldRenderer = target.getAttribute("data-automationid") === "FieldRenderer-name"; // for items in search page
         const isheroField = target.getAttribute("data-id") === "heroField";
+
+        const isValidAtrr = isFieldRenderer || isheroField
         const isValidType = checkValidType(fileName, validTypes);
 
         // get out if type is not valid (not: pdf, dwg, msg, eml...) OR clicked on something irrelevant
-        if (!isValidType || !isheroField) return;
+        if (!isValidType || !isValidAtrr) return;
 
         const dataActionsAttr = target.getAttribute("data-actions");
         let fileSpId: string;
-
-        try {
-            if (dataActionsAttr) {
+        if (dataActionsAttr) {
+            try {
                 const dataActions = JSON.parse(dataActionsAttr);
                 const heroFieldAction = dataActions.find((a: any) => a.key === "heroFieldHoverTarget");
                 if (heroFieldAction?.data) {
                     const data = JSON.parse(heroFieldAction.data);
                     fileSpId = data.itemKey;
                 }
+            } catch (error) {
+                console.error("Failed to parse data-actions:", error);
             }
-        } catch (err) {
-            console.error("Failed to parse data-actions:", err);
+        }
+        // if open file on search page
+        else if ((!dataActionsAttr || isFieldRenderer)) {
+            try {
+                // find the closest parent with the fileSpId info
+                const parentWithDropKey = target.closest('[data-drop-target-key]');
+
+                if (parentWithDropKey) {
+                    const raw = parentWithDropKey.getAttribute('data-drop-target-key');
+                    const parts = JSON.parse(raw.replace(/&quot;/g, '"'));
+                    fileSpId = parts[3]; // idx - 3 is the fileSpId
+                }
+            } catch (error) {
+                console.error("Failed to parse data-drop-target-key:", error);
+            }
         }
 
         handleLinkClick(event, siteId, listID, userEmail, webUrl, userId, fileName, sp, fileSpId, context)
@@ -87,7 +103,7 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
             fileId = firstResult["IdentityListItemId"];
             if (!fileId) fileId = firstResult["UniqueId"];
         }
-        
+
         // if sp.search didnt find the item - with 0 res
         if (results.PrimarySearchResults.length === 0 || !fileId) {
             fileId = await getFileUniqueId(context, listId, fileSpId);
