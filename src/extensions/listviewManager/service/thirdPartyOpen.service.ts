@@ -30,7 +30,7 @@ export async function clickEvent(context: ListViewCommandSetContext) {
         console.error("Error fetching validTypes:", error);
     }
 
-    // Event Listener for mouse clicks:
+    // Event Listener for mouse clicks: (to open files in application)
     window.addEventListener('click', (event) => {
         const target = event.target as HTMLElement;
         const fileName = target.innerText.trim();
@@ -39,11 +39,11 @@ export async function clickEvent(context: ListViewCommandSetContext) {
         const isheroField = target.getAttribute("data-id") === "heroField";
         const isValidType = checkValidType(fileName, validTypes);
 
-        // get out if type is not valid (not: dpf, dwg, msg...)
+        // get out if type is not valid (not: pdf, dwg, msg, eml...) OR clicked on something irrelevant
         if (!isValidType || !isheroField) return;
 
         const dataActionsAttr = target.getAttribute("data-actions");
-        let fileSpId: string | undefined;
+        let fileSpId: string;
 
         try {
             if (dataActionsAttr) {
@@ -58,12 +58,12 @@ export async function clickEvent(context: ListViewCommandSetContext) {
             console.error("Failed to parse data-actions:", err);
         }
 
-        handleLinkClick(event, siteId, listID, userEmail, webUrl, userId, fileName, sp, fileSpId)
+        handleLinkClick(event, siteId, listID, userEmail, webUrl, userId, fileName, sp, fileSpId, context)
     }, true);
     return Promise.resolve();
 }
 
-export async function handleLinkClick(event: MouseEvent, siteId: string, listId: string, userEmail: string, webUrl: string, userId: string, fileName: string, sp: SPFI, fileSpId: string): Promise<void> {
+export async function handleLinkClick(event: MouseEvent, siteId: string, listId: string, userEmail: string, webUrl: string, userId: string, fileName: string, sp: SPFI, fileSpId: string, context: ListViewCommandSetContext): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
     let fileId = ''
@@ -71,8 +71,10 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
         const query = SearchQueryBuilder(`filename:"${fileName}"`)
             .selectProperties("UniqueId", "ListItemId")
             .refinementFilters(`SiteId:${siteId}`)
-            .rowLimit(10);
+            .rowLimit(20);
         const results = await sp.search(query);
+
+        // if found 1 or more items
         if (results.PrimarySearchResults.length > 0) {
             let firstResult = results.PrimarySearchResults[0] as Record<string, string>;
 
@@ -81,16 +83,33 @@ export async function handleLinkClick(event: MouseEvent, siteId: string, listId:
                 firstResult = results.PrimarySearchResults.find((res: Record<string, string>) => res["ListItemId"] === fileSpId) as Record<string, string>;
             }
 
+            // sets UniqueId
             fileId = firstResult["IdentityListItemId"];
             if (!fileId) fileId = firstResult["UniqueId"];
-        } else {
-            console.warn("No results found for file:", fileName);
+        }
+        
+        // if sp.search didnt find the item - with 0 res
+        if (results.PrimarySearchResults.length === 0 || !fileId) {
+            fileId = await getFileUniqueId(context, listId, fileSpId);
         }
     } catch (error) {
-        console.error("Error searching fileId:", error);
+        // if sp.search didnt find the item - with error
+        try {
+            fileId = await getFileUniqueId(context, listId, fileSpId);
+        } catch (error) {
+            console.warn("No results found for file:", fileName, error);
+        }
     }
 
     openFileInApp(siteId, listId, userEmail, webUrl, userId, fileId, fileName);
+}
+
+async function getFileUniqueId(context: ListViewCommandSetContext, listId: string, fileSpId: string): Promise<string> {
+    const sp: SPFI = new SPFI(context.pageContext.site?.absoluteUrl).using(SPFx(context));
+    const spItem = await sp.web.lists.getById(listId).items
+        .getById(parseInt(fileSpId))
+        .select('UniqueId')();
+    return spItem.UniqueId;
 }
 
 export function checkValidType(fileName: string, validTypes: string[]): boolean {
