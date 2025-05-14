@@ -143,46 +143,67 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(React.createElement(Toaster, { position: "top-left", }), container);
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-    compareOneCommand.visible = false;
+    if (compareOneCommand) {
+      compareOneCommand.visible = false;
+    }
     const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
     if (this.isAllowedToMoveFile === false) {
       compareTwoCommand.visible = false;
     }
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
-    compareFiveCommand.visible = false;
-    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
-    // compareThreeCommand.visible = false;
-    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
-    // compareFourCommand.visible = false;
+    if (compareFiveCommand) {
+      compareFiveCommand.visible = false;
+    }
 
+    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
+    // if (compareThreeCommand) {
+    //   compareThreeCommand.visible = false;
+    // }
+    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
+    // if (compareFourCommand) {
+    //   compareFourCommand.visible = false;
+    // }
     // File sharing by email
-    const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
-    externalSharingCompareOneCommand.visible = false;
+    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    // if (externalSharingCompareOneCommand) {
+    //   externalSharingCompareOneCommand.visible = false;
+    // }    
 
     // MeetingInv
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
-    meetingInvCompareOneCommand.visible = false
+    if (meetingInvCompareOneCommand) {
+      meetingInvCompareOneCommand.visible = false;
+    }
 
     // MeetingInv
     const draftCompareOneCommand: Command = this.tryGetCommand('draft')
-    draftCompareOneCommand.visible = false
+    if (draftCompareOneCommand) {
+      draftCompareOneCommand.visible = false;
+    }
 
     // shoppingCart
     const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
-    shoppingCartCompareOneCommand.visible = false
+    if (shoppingCartCompareOneCommand) {
+      shoppingCartCompareOneCommand.visible = false;
+    }
 
     // mergeToPDF
     const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
-    mergeToPDFCompareOneCommand.visible = false
+    if (mergeToPDFCompareOneCommand) {
+      mergeToPDFCompareOneCommand.visible = false;
+    }
 
     // addToFavorites
     const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
-    addToFavoritesCompareOneCommand.visible = false
+    if (addToFavoritesCompareOneCommand) {
+      addToFavoritesCompareOneCommand.visible = false;
+    }
 
     // deleteFromFavorites
     const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
-    deleteFromFavoritesCompareOneCommand.visible = false
-
+    if (deleteFromFavoritesCompareOneCommand) {
+      deleteFromFavoritesCompareOneCommand.visible = false;
+    }
 
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
