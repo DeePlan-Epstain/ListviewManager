@@ -71,7 +71,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (ListviewManagerCommandSet._hasInitialized) return;
     else ListviewManagerCommandSet._hasInitialized = true;
     console.log(solution.name + ":", solution.version);
-    if (this.context.isServedFromLocalhost) console.log('QQQQQQQQQQQQQQQQQQQQQQQQ');
 
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
