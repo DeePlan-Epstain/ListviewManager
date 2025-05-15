@@ -128,6 +128,7 @@ export default function LinkToCategory({
       const fileName = `${item.FileLeafRef}.url`; // Name of the link file
       // const linkUrl = "https://epstin100.sharepoint.com/sites/JerusalemDistrict/Shared%20Documents/%D7%97%D7%95%D7%91%D7%A8%D7%AA122.xlsx"; // URL of the document
       const linkUrl = `https://epstin100.sharepoint.com${item.FileRef}`
+
       const fileContent = `[InternetShortcut]\nURL=${linkUrl}`;
 
       // Convert file content to a Blob
@@ -193,7 +194,7 @@ export default function LinkToCategory({
             <div id="FilePickerWrapper">
               <Autocomplete
                 options={siteOptions.map(option => option.Title)}
-                defaultValue={selectedSite.Title}
+                defaultValue={selectedSite?.Title || ""}
                 sx={{ width: 300 }}
                 renderInput={(params) => <TextField {...params} label="אתר" />}
                 onChange={(event, newSite) => handleSiteChange(newSite)}
