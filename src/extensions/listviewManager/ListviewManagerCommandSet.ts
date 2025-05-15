@@ -5,8 +5,7 @@ import { getSP, getGraph, getSPByPath } from "../../pnpjs-config";
 import {
   BaseListViewCommandSet,
   Command,
-  IListViewCommandSetExecuteEventParameters,
-  IListViewCommandSetListViewUpdatedParameters,
+  IListViewCommandSetExecuteEventParameters
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
@@ -55,8 +54,9 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private graph: GraphFI;
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
-  private typeSet: Set<string>;
-  private typeToConvert: Set<string>;
+  private typeSet: Set<string> = new Set();
+  private typeToConvert: Set<string> = new Set();
+  private static _hasInitialized: boolean = false;
 
   private allowedUsers: string[] = [
     "EpsteinSystem@Epstein.co.il",
@@ -67,12 +67,19 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private spPortal: SPFI = null
 
   public async onInit(): Promise<void> {
+    console.log('ListviewManagerCommandSet._hasInitialized:', ListviewManagerCommandSet._hasInitialized)
+    if (ListviewManagerCommandSet._hasInitialized) return;
+    else ListviewManagerCommandSet._hasInitialized = true;
     console.log(solution.name + ":", solution.version);
+    if (this.context.isServedFromLocalhost) console.log('QQQQQQQQQQQQQQQQQQQQQQQQ');
+
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
 
     this.initExt();
+
+    this.context.listView.listViewStateChangedEvent.add(this, this._onListViewStateChanged);
 
     return Promise.resolve();
   }
@@ -1008,10 +1015,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
 
-  public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
+  public async _onListViewStateChanged(): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
-
-    let LibraryName = this.context.pageContext.list.title;
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
     const compareThreeCommand: Command = this.tryGetCommand("linkToCategory");
@@ -1026,110 +1031,115 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
     const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
 
+    const selectedRows = this.context.listView.selectedRows;
+
     if (compareOneCommand) {
-      compareOneCommand.visible = event.selectedRows?.length === 1 && event.selectedRows[0]?.getValueByName('FSObjType') == 0
+      compareOneCommand.visible = selectedRows?.length === 1 && selectedRows[0]?.getValueByName('FSObjType') == 0
     }
 
     if (compareThreeCommand) {
-      compareThreeCommand.visible = event.selectedRows?.length === 1;
-      // if there is only one selected item and its a file and its a file type that can be converted to pdf
-      if (compareFiveCommand) {
-        compareFiveCommand.visible = event.selectedRows?.length === 1
-          && event.selectedRows[0]?.getValueByName('FSObjType') == 0
-          && this.typeSet?.has(event.selectedRows[0]?.getValueByName(".fileType"));// &&
-        // event.selectedRows[0].getValueByName("fileSize") > 0;
-      }
-
-      // // if there is one selected item or more and its a file
-      // if (externalSharingCompareOneCommand) {
-      //   if (event.selectedRows?.length > 0) {
-      //     const fileExt = event.selectedRows[0].getValueByName(".fileType")
-      //     if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-      //   } else externalSharingCompareOneCommand.visible = false;
-      // }
-
-      // MeetingInv
-      if (meetingInvCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType")
-          if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
-        } else meetingInvCompareOneCommand.visible = false;
-      }
-
-      // Draft
-      if (draftCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType")
-          if (fileExt.toLowerCase() !== "") draftCompareOneCommand.visible = true;
-        } else draftCompareOneCommand.visible = false;
-      }
-
-      // shoppingCart
-      if (shoppingCartCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType")
-          if (fileExt.toLowerCase() !== "") shoppingCartCompareOneCommand.visible = true;
-        } else shoppingCartCompareOneCommand.visible = false;
-      }
-
-      // addToFavorites
-      if (addToFavoritesCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
-          const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
-          // Only show the button if every selected file is NOT in favorites.
-          addToFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
-        } else {
-          addToFavoritesCompareOneCommand.visible = false;
-        }
-      }
-
-      // deleteFromFavorites
-      if (deleteFromFavoritesCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const allSelectedFiles = event.selectedRows.map(row => row.getValueByName('FileRef'));
-          const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
-          // Only show the button if every selected file IS in favorites.
-          deleteFromFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
-        } else {
-          deleteFromFavoritesCompareOneCommand.visible = false;
-        }
-      }
-
-      // mergeToPDF
-      if (mergeToPDFCompareOneCommand) {
-        if (event.selectedRows?.length > 0) {
-          const fileExt = event.selectedRows[0].getValueByName(".fileType").toLowerCase();
-
-          mergeToPDFCompareOneCommand.visible = this.typeToConvert?.has(fileExt);
-        } else {
-          mergeToPDFCompareOneCommand.visible = false;
-        }
-      }
-
-      if (compareSixCommand) {
-        compareSixCommand.visible = event.selectedRows?.length >= 1;
-      }
-
-      // if (compareThreeCommand) {
-      //   if (event.selectedRows?.length > 0) {
-      //     const isFolder = Boolean(
-      //       event.selectedRows.find(
-      //         (r) => r.getValueByName("ContentType") === "Folder"
-      //       )
-      //     );
-      //     compareThreeCommand.visible = !isFolder;
-      //   } else compareThreeCommand.visible = false;
-      // }
-
-      // if (compareFourCommand) {
-      //   compareFourCommand.visible = event.selectedRows?.length === 1;
-      // }
-
-      // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-      // if (compareTwoCommand) {
-      //   compareTwoCommand.visible = event.selectedRows?.length === 1;
-      // }
+      compareThreeCommand.visible = selectedRows?.length === 1;
     }
+    // if there is only one selected item and its a file and its a file type that can be converted to pdf
+    if (compareFiveCommand) {
+      console.log("test1");
+      compareFiveCommand.visible = selectedRows?.length === 1
+        && selectedRows[0]?.getValueByName('FSObjType') == 0
+        && this.typeSet?.has(selectedRows[0]?.getValueByName(".fileType"));// &&
+      // selectedRows[0].getValueByName("fileSize") > 0;
+    }
+
+    // MeetingInv
+    if (meetingInvCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const fileExt = selectedRows[0].getValueByName(".fileType")
+        if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
+      } else meetingInvCompareOneCommand.visible = false;
+    }
+
+    // Draft
+    if (draftCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const fileExt = selectedRows[0].getValueByName(".fileType")
+        if (fileExt.toLowerCase() !== "") draftCompareOneCommand.visible = true;
+      } else draftCompareOneCommand.visible = false;
+    }
+
+    // shoppingCart
+    if (shoppingCartCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const fileExt = selectedRows[0].getValueByName(".fileType")
+        if (fileExt.toLowerCase() !== "") shoppingCartCompareOneCommand.visible = true;
+      } else shoppingCartCompareOneCommand.visible = false;
+    }
+
+    // addToFavorites
+    if (addToFavoritesCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const allSelectedFiles = selectedRows.map(row => row.getValueByName('FileRef'));
+        const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
+        // Only show the button if every selected file is NOT in favorites.
+        addToFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
+      } else {
+        addToFavoritesCompareOneCommand.visible = false;
+      }
+    }
+
+    // deleteFromFavorites
+    if (deleteFromFavoritesCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const allSelectedFiles = selectedRows.map(row => row.getValueByName('FileRef'));
+        const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
+        // Only show the button if every selected file IS in favorites.
+        deleteFromFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
+      } else {
+        deleteFromFavoritesCompareOneCommand.visible = false;
+      }
+    }
+
+    // mergeToPDF
+    if (mergeToPDFCompareOneCommand) {
+      if (selectedRows?.length > 0) {
+        const fileExt = selectedRows[0].getValueByName(".fileType").toLowerCase();
+
+        mergeToPDFCompareOneCommand.visible = this.typeToConvert?.has(fileExt);
+      } else {
+        mergeToPDFCompareOneCommand.visible = false;
+      }
+    }
+
+    if (compareSixCommand) {
+      compareSixCommand.visible = selectedRows?.length >= 1;
+    }
+
+    // // if there is one selected item or more and its a file
+    // if (externalSharingCompareOneCommand) {
+    //   if (event.selectedRows?.length > 0) {
+    //     const fileExt = event.selectedRows[0].getValueByName(".fileType")
+    //     if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
+    //   } else externalSharingCompareOneCommand.visible = false;
+    // }
+
+    // if (compareThreeCommand) {
+    //   if (event.selectedRows?.length > 0) {
+    //     const isFolder = Boolean(
+    //       event.selectedRows.find(
+    //         (r) => r.getValueByName("ContentType") === "Folder"
+    //       )
+    //     );
+    //     compareThreeCommand.visible = !isFolder;
+    //   } else compareThreeCommand.visible = false;
+    // }
+
+    // if (compareFourCommand) {
+    //   compareFourCommand.visible = event.selectedRows?.length === 1;
+    // }
+
+    // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+    // if (compareTwoCommand) {
+    //   compareTwoCommand.visible = event.selectedRows?.length === 1;
+    // }
+    this.raiseOnChange();
   }
 }
+// }
