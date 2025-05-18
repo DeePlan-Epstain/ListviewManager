@@ -4,7 +4,7 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://epstin100.sharepoint.com/sites/InfrastructureDivision/Projects/Forms/AllItems.aspx",
+      "pageUrl": "https://epstin100.sharepoint.com/sites/Management/Headquarters/Forms/AllItems.aspx",
       "customActions": {
         "8cafb949-073a-4a69-937e-05b37bf163ea": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
@@ -16,7 +16,7 @@
       }
     },
     "listviewManager": {
-      "pageUrl": "https://epstin100.sharepoint.com/sites/InfrastructureDivision/Projects/Forms/AllItems.aspx",
+      "pageUrl": "https://epstin100.sharepoint.com/sites/Management/Headquarters/Forms/AllItems.aspx",
       "customActions": {
         "8cafb949-073a-4a69-937e-05b37bf163ea": {
           "location": "ClientSideExtension.ListViewCommandSet.CommandBar",

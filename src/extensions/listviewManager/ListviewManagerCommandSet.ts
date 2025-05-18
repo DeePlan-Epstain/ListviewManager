@@ -5,7 +5,8 @@ import { getSP, getGraph, getSPByPath } from "../../pnpjs-config";
 import {
   BaseListViewCommandSet,
   Command,
-  IListViewCommandSetExecuteEventParameters
+  IListViewCommandSetExecuteEventParameters,
+  IListViewCommandSetListViewUpdatedParameters
 } from "@microsoft/sp-listview-extensibility";
 import { SPFI } from "@pnp/sp";
 import { ISiteUserInfo } from "@pnp/sp/site-users/types";
@@ -75,10 +76,74 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
     this.graph = getGraph(this.context);
+    ///
+    const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
+
+    if (compareOneCommand) {
+      compareOneCommand.visible = false;
+    }
+    const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
+    if (this.isAllowedToMoveFile === false) {
+      compareTwoCommand.visible = false;
+    }
+    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
+    if (compareFiveCommand) {
+      compareFiveCommand.visible = false;
+    }
+
+    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
+    // if (compareThreeCommand) {
+    //   compareThreeCommand.visible = false;
+    // }
+    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
+    // if (compareFourCommand) {
+    //   compareFourCommand.visible = false;
+    // }
+    // File sharing by email
+    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
+    // if (externalSharingCompareOneCommand) {
+    //   externalSharingCompareOneCommand.visible = false;
+    // }    
+
+    // MeetingInv
+    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
+    if (meetingInvCompareOneCommand) {
+      meetingInvCompareOneCommand.visible = false;
+    }
+
+    // MeetingInv
+    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
+    if (draftCompareOneCommand) {
+      draftCompareOneCommand.visible = false;
+    }
+
+    // shoppingCart
+    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
+    if (shoppingCartCompareOneCommand) {
+      shoppingCartCompareOneCommand.visible = false;
+    }
+
+    // mergeToPDF
+    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
+    if (mergeToPDFCompareOneCommand) {
+      mergeToPDFCompareOneCommand.visible = false;
+    }
+
+    // addToFavorites
+    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
+    if (addToFavoritesCompareOneCommand) {
+      addToFavoritesCompareOneCommand.visible = false;
+    }
+
+    // deleteFromFavorites
+    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
+    if (deleteFromFavoritesCompareOneCommand) {
+      deleteFromFavoritesCompareOneCommand.visible = false;
+    }
+    ///
+    // this.context.listView.listViewStateChangedEvent.add(this, this._onListViewStateChanged);
 
     this.initExt();
-
-    this.context.listView.listViewStateChangedEvent.add(this, this._onListViewStateChanged);
 
     return Promise.resolve();
   }
@@ -147,69 +212,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     // Render the Toaster (this will allow toasts to show)
     ReactDom.render(React.createElement(Toaster, { position: "top-left", }), container);
-
-    const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-    if (compareOneCommand) {
-      compareOneCommand.visible = false;
-    }
-    const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    if (this.isAllowedToMoveFile === false) {
-      compareTwoCommand.visible = false;
-    }
-    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
-    if (compareFiveCommand) {
-      compareFiveCommand.visible = false;
-    }
-
-    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
-    // if (compareThreeCommand) {
-    //   compareThreeCommand.visible = false;
-    // }
-    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
-    // if (compareFourCommand) {
-    //   compareFourCommand.visible = false;
-    // }
-    // File sharing by email
-    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
-    // if (externalSharingCompareOneCommand) {
-    //   externalSharingCompareOneCommand.visible = false;
-    // }    
-
-    // MeetingInv
-    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
-    if (meetingInvCompareOneCommand) {
-      meetingInvCompareOneCommand.visible = false;
-    }
-
-    // MeetingInv
-    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
-    if (draftCompareOneCommand) {
-      draftCompareOneCommand.visible = false;
-    }
-
-    // shoppingCart
-    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
-    if (shoppingCartCompareOneCommand) {
-      shoppingCartCompareOneCommand.visible = false;
-    }
-
-    // mergeToPDF
-    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
-    if (mergeToPDFCompareOneCommand) {
-      mergeToPDFCompareOneCommand.visible = false;
-    }
-
-    // addToFavorites
-    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
-    if (addToFavoritesCompareOneCommand) {
-      addToFavoritesCompareOneCommand.visible = false;
-    }
-
-    // deleteFromFavorites
-    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
-    if (deleteFromFavoritesCompareOneCommand) {
-      deleteFromFavoritesCompareOneCommand.visible = false;
-    }
 
     const isUserAllowed = this.allowedUsers.includes(this.currUser.Email);
     if (!isUserAllowed) {
@@ -355,7 +357,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   extractLibraryDetails = async (
     fileRef: string
   ): Promise<{ libraryName: string; libraryID: string }> => {
-    console.log(fileRef);
 
     const parts = fileRef.split("/");
     const libraryUrlPart = parts.length > 2 ? parts[3] : "";
@@ -481,11 +482,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     });
 
     // Retrieve user contacts
-    const contact = await this.graph.me.contacts();
-    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+    // const contact = await this.graph.me.contacts();
+    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update SendDocumentService properties
-    SendDocumentService.EmailAddress = emails;
+    SendDocumentService.EmailAddress = [] //emails;
     SendDocumentService.fileNames = fileNames;
     SendDocumentService.fileUris = fileRefs;
     SendDocumentService.DocumentIdUrls = documentIdUrls;
@@ -551,11 +552,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     });
 
     // Retrieve user contacts
-    const contact = await this.graph.me.contacts();
-    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+    // const contact = await this.graph.me.contacts();
+    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update CreateEvent properties
-    CreateEvent.EmailAddress = emails;
+    CreateEvent.EmailAddress = [] //emails;
     CreateEvent.fileNames = fileNames;
     CreateEvent.fileUris = fileRefs;
     CreateEvent.DocumentIdUrls = documentIdUrls;
@@ -628,11 +629,11 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     });
 
     // Retrieve user contacts
-    const contact = await this.graph.me.contacts();
-    const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
+    // const contact = await this.graph.me.contacts();
+    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update CreateDraft properties
-    CreateDraft.EmailAddress = emails;
+    CreateDraft.EmailAddress = [] //emails;
     CreateDraft.fileNames = fileNames;
     CreateDraft.fileUris = fileRefs;
     CreateDraft.DocumentIdUrls = documentIdUrls;
@@ -1013,8 +1014,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.render(element, this.dialogContainer);
   }
 
-
-  public async _onListViewStateChanged(): Promise<void> {
+  public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
@@ -1030,7 +1030,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
     const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
 
-    const selectedRows = this.context.listView.selectedRows;
+    const selectedRows = event.selectedRows;
 
     if (compareOneCommand) {
       compareOneCommand.visible = selectedRows?.length === 1 && selectedRows[0]?.getValueByName('FSObjType') == 0
@@ -1041,7 +1041,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     }
     // if there is only one selected item and its a file and its a file type that can be converted to pdf
     if (compareFiveCommand) {
-      console.log("test1");
       compareFiveCommand.visible = selectedRows?.length === 1
         && selectedRows[0]?.getValueByName('FSObjType') == 0
         && this.typeSet?.has(selectedRows[0]?.getValueByName(".fileType"));// &&
