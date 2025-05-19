@@ -52,12 +52,10 @@ const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
-  private graph: GraphFI;
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
   private typeSet: Set<string> = new Set();
   private typeToConvert: Set<string> = new Set();
-  private static _hasInitialized: boolean = false;
 
   private allowedUsers: string[] = [
     "EpsteinSystem@Epstein.co.il",
@@ -68,14 +66,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private spPortal: SPFI = null
 
   public async onInit(): Promise<void> {
-    console.log('ListviewManagerCommandSet._hasInitialized:', ListviewManagerCommandSet._hasInitialized)
-    if (ListviewManagerCommandSet._hasInitialized) return;
-    else ListviewManagerCommandSet._hasInitialized = true;
     console.log(solution.name + ":", solution.version);
 
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
-    this.graph = getGraph(this.context);
     ///
     const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
 
@@ -159,7 +153,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       // Convertible Types list
       this.typeToConvert = new Set((await this.spPortal.web.lists.getById(CONVERTIBLE_TYPES_ID).items.select("Title")()).map(item => item.Title));
 
-      const { Id, Email } = this.currUser
+      const { Email } = this.currUser
       const userFound = allListItemsFavorites.find(user => user?.email.trim().toLocaleLowerCase() === this.currUser.Email.trim().toLocaleLowerCase())
       if (allListItemsFavorites && userFound) {
         // user exists in the list
@@ -797,6 +791,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     let linkTitle = null
 
     try {
+      console.log('this.spPortal:', this.spPortal)
       linkTitle = await this.spPortal.web.lists.getById(navTreeListIds).items.filter(`SiteId eq '${siteId}'`)()
     } catch (error) {
       console.error('Error linkTitle', error)
