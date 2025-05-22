@@ -7,13 +7,18 @@ import Swal from "sweetalert2";
 import { Errors } from "../../errorConfig";
 
 export async function getConvertibleTypes(context: ListViewCommandSetContext) {
-    const sp: SPFI = new SPFI('https://epstin100.sharepoint.com/sites/EpsteinPortal').using(SPFx(context));
-    const listId = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47';
-    const listItems = await sp.web.lists.getById(listId).items.getAll();
-    const types = listItems.map(item => item.Title)
-    const typeSet = new Set<string>();
-    types.forEach(type => typeSet.add(type));
-    return typeSet;
+    try {
+        const sp: SPFI = new SPFI('https://epstin100.sharepoint.com/sites/EpsteinPortal').using(SPFx(context));
+        const listId = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47';
+        const listItems = await sp.web.lists.getById(listId).items.getAll();
+        const types = listItems.map(item => item.Title)
+        const typeSet = new Set<string>();
+        types.forEach(type => typeSet.add(type));
+        return typeSet;
+    } catch (error) {
+        console.error("Error fetching convertible types:", error);
+        throw error;
+    }
 }
 
 function getRelativeSite(fileRef: string) {
