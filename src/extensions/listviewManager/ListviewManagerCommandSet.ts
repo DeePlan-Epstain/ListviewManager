@@ -48,14 +48,15 @@ const LOG_SOURCE: string = "ListviewManagerCommandSet";
 const FAVORITES_LIST_ID = '6f3d6257-4a9b-41fe-a847-487c942cd628'
 const FAVORITES_ADDIN_LIST_ID = 'eccc2588-4c91-4259-bd18-f2d7c780803d';
 const CONVERTIBLE_TYPES_ID = 'b748b7b9-6b49-44f9-b889-ef7e99ebdb47'
+const CONVERTIBLE_TYPES = ['doc', 'docx', 'dot', 'dotx', 'docm', 'dotm', 'rtf', 'txt', 'odt', 'xls', 'xlsx', 'xlsm', 'xltx', 'xltm', 'xlsb', 'csv', 'xml', 'xml', 'ods', 'ppt', 'pptx', 'ppsx', 'potx', 'pps', 'pot', 'odp', 'pdf']
 
 export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IListviewManagerCommandSetProperties> {
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
   private currUser: ISiteUserInfo;
   private isAllowedToMoveFile: boolean = false;
-  private typeSet: Set<string> = new Set();
-  private typeToConvert: Set<string> = new Set();
+  private typeSet: Set<string> = new Set(CONVERTIBLE_TYPES);
+  private typeToConvert: Set<string> = new Set(CONVERTIBLE_TYPES);
 
   private allowedUsers: string[] = [
     "EpsteinSystem@Epstein.co.il",
@@ -143,6 +144,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   }
 
   private async initExt() {
+    const t0 = performance.now()
     clickEvent(this.context);
     try {
       this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
@@ -188,7 +190,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
       }
       this.typeSet = await getConvertibleTypes(this.context);
-
     } catch (error) {
       console.error('onInit error:', error)
     }
@@ -211,6 +212,8 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (!isUserAllowed) {
       require("./styles/createNewFolder.module.scss"); // hide the button create new folder if the user is not allowed
     }
+
+    console.log("initExt took " + (performance.now() - t0) + " milliseconds.");
   }
 
   protected get dataVersion(): Version {
@@ -1038,15 +1041,14 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (compareFiveCommand) {
       compareFiveCommand.visible = selectedRows?.length === 1
         && selectedRows[0]?.getValueByName('FSObjType') == 0
-        && this.typeSet?.has(selectedRows[0]?.getValueByName(".fileType"));// &&
-      // selectedRows[0].getValueByName("fileSize") > 0;
+        && this.typeSet?.has(selectedRows[0]?.getValueByName(".fileType"));
     }
 
     // MeetingInv
     if (meetingInvCompareOneCommand) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "") meetingInvCompareOneCommand.visible = true;
+        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) meetingInvCompareOneCommand.visible = true;
       } else meetingInvCompareOneCommand.visible = false;
     }
 
@@ -1054,7 +1056,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (draftCompareOneCommand) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "") draftCompareOneCommand.visible = true;
+        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) draftCompareOneCommand.visible = true;
       } else draftCompareOneCommand.visible = false;
     }
 
