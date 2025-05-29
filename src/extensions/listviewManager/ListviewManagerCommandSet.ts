@@ -77,9 +77,10 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     if (compareOneCommand) {
       compareOneCommand.visible = false;
     }
+    this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
     const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    if (this.isAllowedToMoveFile === false) {
-      compareTwoCommand.visible = false;
+    if (compareTwoCommand) {
+      compareTwoCommand.visible = true;
     }
     const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
     if (compareFiveCommand) {
@@ -99,6 +100,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     // if (externalSharingCompareOneCommand) {
     //   externalSharingCompareOneCommand.visible = false;
     // }    
+
 
     // MeetingInv
     const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
@@ -1027,6 +1029,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
     const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
     const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
+
 
     const selectedRows = event.selectedRows;
 
