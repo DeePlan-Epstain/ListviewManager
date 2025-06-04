@@ -16,6 +16,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import moment, { Moment } from 'moment';
 import styles from './MeetingInv.module.scss'
+import { Dialog as DialogMicrosoft } from '@microsoft/sp-dialog';
 
 export interface IMeetingInvState {
     isLoading: boolean;
@@ -36,7 +37,7 @@ export interface IMeetingInvState {
     endTime: any,
     dateAndTimeError: string
     onlineMeeting: boolean
-    link: string
+    link: string | Error
 }
 
 export default class MeetingInv extends React.Component<IMeetingInvProps, IMeetingInvState> {
@@ -86,7 +87,11 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
     }
 
     componentWillUnmount(): void {
-        window.open(this.state.link, '_blank');
+        if (typeof this.state.link !== 'string') {
+            DialogMicrosoft.alert('Something went wrong')
+        } else {
+            window.open(this.state.link, '_blank');
+        }
     }
 
     private _onChangedSubject = (e: any) => {
@@ -362,7 +367,40 @@ export default class MeetingInv extends React.Component<IMeetingInvProps, IMeeti
     }
 
     // _onStart without the form
-    public _onStart() {
+    public async _onStart() {
+
+        const fileUris: string[] = this.props.createEvent.fileUris;
+        const fileNames: string[] = this.props.createEvent.fileNames;
+        try {
+            // 1. Fetch all ArrayBuffers in parallel:
+            const buffers: ArrayBuffer[] = await Promise.all(
+                fileUris.map((uri: string) =>
+                    this.props.sp.web
+                        .getFileByServerRelativePath(uri)
+                        .getBuffer()
+                )
+            );
+
+            // 2a. Build attachments with a `map` (concise):
+            const attachments: EMailAttachment[] = buffers.map((buf, idx) => ({
+                FileName: fileNames[idx],
+                ContentBytes: buf
+            }));
+            this._eventProperties.Attachment = attachments;
+            await this.props.createEvent.createEvent(this._eventProperties).then((link) => {
+                if (typeof link !== 'string') {
+                    this.props.close();
+                    return;
+                }
+                this.setState({ succeed: true, isLoading: false, link: link as string });
+            }).then(() => {
+                this.props.close(); // Close the modal after a delay for visual feedback
+            });
+
+        } catch (error) {
+            console.error('Error start event', error)
+        }
+        return
         this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
             this._eventProperties.Attachment = attachments;
             this.createEvent(this._eventProperties)

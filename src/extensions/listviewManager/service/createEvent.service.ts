@@ -179,7 +179,7 @@ export class CreateEvent implements IService {
             return {
                 "@odata.type": "#microsoft.graph.fileAttachment",
                 name: attachment.FileName,
-                contentBytes: attachment.ContentBytes
+                contentBytes: this.base64ArrayBuffer(attachment.ContentBytes)
             }
         })
 

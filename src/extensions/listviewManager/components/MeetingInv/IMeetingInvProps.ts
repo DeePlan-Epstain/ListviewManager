@@ -1,3 +1,4 @@
+import { SPFI } from "@pnp/sp";
 import { EventProperties } from "../../models/global.model";
 import { IService } from "./models/IService";
 
@@ -6,5 +7,6 @@ export interface IMeetingInvProps {
     submit: (eMailProperties: EventProperties) => void;
     eventProperties: EventProperties;
     createEvent: IService;
+    sp: SPFI;
 }
 
