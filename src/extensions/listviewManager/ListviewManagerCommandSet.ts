@@ -577,6 +577,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       MeetingInv,
       {
         close: this._closeDialogContainer,
+        sp: this.sp,
         eventProperties: new EventProperties({
           To: "",
           optionals: "",
@@ -654,6 +655,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       Draft,
       {
         close: this._closeDialogContainer,
+        sp: this.sp,
         draftProperties: new DraftProperties({
           Subject: `טיוטה - ${CreateDraft.fileNames}`,
           Body: "",

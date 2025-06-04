@@ -37,7 +37,7 @@ export type File = {
 // Returns Email Attachment object
 export class EMailAttachment {
   public FileName: string;
-  public ContentBytes: string;
+  public ContentBytes: string | ArrayBuffer;
 
   constructor(options: EMailAttachment) {
     this.FileName = options.FileName;

@@ -6,7 +6,7 @@ import { cacheRtl } from "../../models/cacheRtl";
 import { StylesProvider } from '@material-ui/core/styles';
 import { CacheProvider } from '@emotion/react';
 import { Modal, CircularProgress } from '@mui/material'
-
+import { Dialog as DialogMicrosoft } from '@microsoft/sp-dialog';
 import moment, { Moment } from 'moment';
 
 
@@ -41,7 +41,11 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
     }
 
     componentWillUnmount(): void {
-        window.open(this.state.link, '_blank');
+        if (typeof this.state.link !== 'string') {
+            DialogMicrosoft.alert('Something went wrong')
+        } else {
+            window.open(this.state.link, '_blank');
+        }
     }
 
     // Returns EMailAttachment object which contains the file name and its Content Encodes into base64 string
@@ -96,7 +100,39 @@ export default class Draft extends React.Component<IDraftProps, IDraftState> {
     }
 
     // Submit the form
-    public _submit() {
+    public async _submit() {
+        const fileUris: string[] = this.props.createDraft.fileUris;
+        const fileNames: string[] = this.props.createDraft.fileNames;
+        try {
+            // 1. Fetch all ArrayBuffers in parallel:
+            const buffers: ArrayBuffer[] = await Promise.all(
+                fileUris.map((uri: string) =>
+                    this.props.sp.web
+                        .getFileByServerRelativePath(uri)
+                        .getBuffer()
+                )
+            );
+
+            // 2a. Build attachments with a `map` (concise):
+            const attachments: EMailAttachment[] = buffers.map((buf, idx) => ({
+                FileName: fileNames[idx],
+                ContentBytes: buf
+            }));
+            this._draftProperties.Attachment = attachments;
+            await this.props.createDraft.createDraft(this._draftProperties).then((link) => {
+                if (typeof link !== 'string') {
+                    this.props.close();
+                    return;
+                }
+                this.setState({ succeed: true, isLoading: false, link: link as string });
+            }).then(() => {
+                this.props.close(); // Close the modal after a delay for visual feedback
+            });
+
+        } catch (error) {
+            console.error('Error submit draft', error)
+        }
+        return;
 
         this.getEMailAttachment().then((attachments: EMailAttachment[]) => {
             this._draftProperties.Attachment = attachments;
