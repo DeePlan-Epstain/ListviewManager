@@ -30,7 +30,7 @@ function getRelativeSite(fileRef: string) {
 
 // this function send a http to power automate to convert the file to pdf
 export async function ConvertToPdf(context: ListViewCommandSetContext, selectedItem: SelectedFile) {
-    const paService = new PAService(context, "https://prod-48.westeurope.logic.azure.com:443/workflows/60282bd80e29428c9094b301317c665c/triggers/manual/paths/invoke?api-version=2016-06-01");
+    const paService = new PAService(context, "https://prod-04.westeurope.logic.azure.com:443/workflows/604c7234ec1a4afe8d59cd5cf7706162/triggers/manual/paths/invoke?api-version=2016-06-01");
 
     let baseUrl = 'https://epstin100.sharepoint.com';
 
