@@ -138,6 +138,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
         })
       }
       this.typeSet = await getConvertibleTypes(this.context);
+      this._checkUserPermissionToMoveFile()
     } catch (error) {
       console.error('onInit error:', error)
     }
@@ -370,6 +371,16 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       });
 
     ReactDom.render(element, this.dialogContainer);
+  }
+
+  private async _checkUserPermissionToMoveFile(): Promise<boolean> {
+    try {
+      return await this.sp.web.lists
+        .getById(this.context.pageContext.list.id["_guid"])
+        .currentUserHasPermissions(PermissionKind.EditListItems);
+    } catch (error) {
+      console.error("Error while checking user permission to move file", error);
+    }
   }
 
   private async selectedRowsToShareDocuments(selectedRows: any[]): Promise<void> {
