@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDom from "react-dom";
 import { Log } from "@microsoft/sp-core-library";
-import { getSP, getGraph, getSPByPath } from "../../pnpjs-config";
+import { getSP, getSPByPath } from "../../pnpjs-config";
 import {
   BaseListViewCommandSet,
   Command,
@@ -21,7 +21,6 @@ import { ModalExtProps } from "./components/FolderHierarchy/ModalExtProps";
 import { MergePDFProps } from "./components/MergePDF/MergePDF.cmp";
 import LinkToCategory from "./components/LinkToCategory/LinkToCategory";
 import { ConvertToPdf, getConvertibleTypes } from "./service/pdf.service";
-import { GraphFI } from "@pnp/graph";
 import SendDocumentService from "./service/sendDocument.service";
 import CreateEvent from "./service/createEvent.service";
 import ExportZipModal from "./components/ExportZip/ExportZip.cmp";
@@ -54,7 +53,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private dialogContainer: HTMLDivElement;
   private sp: SPFI;
   private currUser: ISiteUserInfo;
-  private isAllowedToMoveFile: boolean = false;
   private typeSet: Set<string> = new Set(CONVERTIBLE_TYPES);
   private typeToConvert: Set<string> = new Set(CONVERTIBLE_TYPES);
 
@@ -71,85 +69,33 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     Log.info(LOG_SOURCE, "Initialized ListviewManagerCommandSet");
     this.sp = getSP(this.context);
-    ///
-    const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-
-    if (compareOneCommand) {
-      compareOneCommand.visible = false;
-    }
-    this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
-    const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    if (compareTwoCommand) {
-      compareTwoCommand.visible = true;
-    }
-    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
-    if (compareFiveCommand) {
-      compareFiveCommand.visible = false;
-    }
-
-    // const compareThreeCommand: Command = this.tryGetCommand("Move_File");
-    // if (compareThreeCommand) {
-    //   compareThreeCommand.visible = false;
-    // }
-    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
-    // if (compareFourCommand) {
-    //   compareFourCommand.visible = false;
-    // }
-    // File sharing by email
-    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
-    // if (externalSharingCompareOneCommand) {
-    //   externalSharingCompareOneCommand.visible = false;
-    // }    
-
-
-    // MeetingInv
-    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
-    if (meetingInvCompareOneCommand) {
-      meetingInvCompareOneCommand.visible = false;
-    }
-
-    // MeetingInv
-    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
-    if (draftCompareOneCommand) {
-      draftCompareOneCommand.visible = false;
-    }
-
-    // shoppingCart
-    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
-    if (shoppingCartCompareOneCommand) {
-      shoppingCartCompareOneCommand.visible = false;
-    }
-
-    // mergeToPDF
-    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
-    if (mergeToPDFCompareOneCommand) {
-      mergeToPDFCompareOneCommand.visible = false;
-    }
-
-    // addToFavorites
-    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
-    if (addToFavoritesCompareOneCommand) {
-      addToFavoritesCompareOneCommand.visible = false;
-    }
-
-    // deleteFromFavorites
-    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
-    if (deleteFromFavoritesCompareOneCommand) {
-      deleteFromFavoritesCompareOneCommand.visible = false;
-    }
-    ///
-    // this.context.listView.listViewStateChangedEvent.add(this, this._onListViewStateChanged);
-
+    this.handleCmds();
     this.initExt();
 
     return Promise.resolve();
+  }
+
+  private handleCmds() {
+    const commandConfigs = this.context.manifest.items;
+
+    const cmdArr: any[] = Object.entries(commandConfigs).map(([id, config]) => ({
+      ...config,
+      id,
+    }));
+
+    cmdArr.forEach((cmd) => {
+      const cmdObj: Command = this.tryGetCommand(cmd.id);
+
+      if (cmdObj) {
+        cmdObj.visible = cmd.visible || false;
+      }
+    });
   }
 
   private async initExt() {
     const t0 = performance.now()
     clickEvent(this.context);
     try {
-      this.isAllowedToMoveFile = await this._checkUserPermissionToMoveFile();
       this.currUser = await this.sp.web.currentUser();
       this.spPortal = getSPByPath("https://epstin100.sharepoint.com/sites/EpsteinPortal", this.context);
       // Favorites list
@@ -283,14 +229,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
           await this.selectedRowsToShareDocuments(Array.from(event.selectedRows));
         }
         break;
-      // case "Move_File":
-      //   this._renderMoveFileModal(selectedFiles);
-      //   break;
-      // case "RenameFile":
-      //   if (libraryName && libraryID) {
-      //     this._renderRenameFileModal(selectedFiles[0], libraryName, libraryID);
-      //   }
-      //   break;
       case "MeetingInv":
         // Check if the user selected some items
         if (event.selectedRows.length > 0) {
@@ -379,16 +317,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
     ReactDom.unmountComponentAtNode(this.dialogContainer!);
   };
 
-  private async _checkUserPermissionToMoveFile(): Promise<boolean> {
-    try {
-      return await this.sp.web.lists
-        .getById(this.context.pageContext.list.id["_guid"])
-        .currentUserHasPermissions(PermissionKind.EditListItems);
-    } catch (error) {
-      console.error("Error while checking user permission to move file", error);
-    }
-  }
-
   private _renderLinkToCategoryModal(selectedRows: any[]) {
     const element: React.ReactElement<MoveFileProps> = React.createElement(
       LinkToCategory,
@@ -402,25 +330,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
 
     ReactDom.render(element, this.dialogContainer);
   }
-
-  // private _renderRenameFileModal(
-  //   selectedRow: any,
-  //   libraryName: any,
-  //   libraryID: any
-  // ) {
-  //   const element: React.ReactElement<IRenameFileProps> = React.createElement(
-  //     RenameFile,
-  //     {
-  //       sp: this.sp,
-  //       context: this.context,
-  //       selectedRow,
-  //       libraryName,
-  //       libraryID,
-  //       unMountDialog: this._closeDialogContainer,
-  //     }
-  //   );
-  //   ReactDom.render(element, this.dialogContainer);
-  // }
 
   private _renderApproveDocumentModal(selectedRow: any, modalInterface: "Review" | "Approval") {
     const element: React.ReactElement<ApproveDocumentProps> =
@@ -479,10 +388,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
     });
-
-    // Retrieve user contacts
-    // const contact = await this.graph.me.contacts();
-    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update SendDocumentService properties
     SendDocumentService.EmailAddress = [] //emails;
@@ -549,10 +454,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
     });
-
-    // Retrieve user contacts
-    // const contact = await this.graph.me.contacts();
-    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update CreateEvent properties
     CreateEvent.EmailAddress = [] //emails;
@@ -627,10 +528,6 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
       fileRefs.push(fileRef);
       documentIdUrls.push(documentIdUrl);
     });
-
-    // Retrieve user contacts
-    // const contact = await this.graph.me.contacts();
-    // const emails = contact.flatMap((c: any) => c.emailAddresses.map((email: any) => email.address));
 
     // Update CreateDraft properties
     CreateDraft.EmailAddress = [] //emails;
@@ -1019,127 +916,98 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   public async onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): Promise<void> {
     Log.info(LOG_SOURCE, "List view state changed");
 
-    const compareOneCommand: Command = this.tryGetCommand("Approval_Document");
-    const compareThreeCommand: Command = this.tryGetCommand("linkToCategory");
-    // const compareFourCommand: Command = this.tryGetCommand("RenameFile");
-    const compareFiveCommand: Command = this.tryGetCommand("convertToPDF");
-    const compareSixCommand: Command = this.tryGetCommand("ExportToZip");
-    // const externalSharingCompareOneCommand: Command = this.tryGetCommand("External_Sharing");
-    const meetingInvCompareOneCommand: Command = this.tryGetCommand('MeetingInv')
-    const draftCompareOneCommand: Command = this.tryGetCommand('draft')
-    const shoppingCartCompareOneCommand: Command = this.tryGetCommand('shoppingCart')
-    const addToFavoritesCompareOneCommand: Command = this.tryGetCommand('addToFavorites')
-    const deleteFromFavoritesCompareOneCommand: Command = this.tryGetCommand('deleteFromFavorites')
-    const mergeToPDFCompareOneCommand: Command = this.tryGetCommand('mergeToPDF')
+    // Always on cmds: folderHierarchyCmd
 
+    const approvalCmd: Command = this.tryGetCommand("Approval_Document");
+    const convertToPdfCmd: Command = this.tryGetCommand("convertToPDF");
+    const meetingInvCmd: Command = this.tryGetCommand('MeetingInv')
+    const draftCmd: Command = this.tryGetCommand('draft')
+    const shoppingCartCmd: Command = this.tryGetCommand('shoppingCart')
+    const mergeToPDFCmd: Command = this.tryGetCommand('mergeToPDF')
+    const addToFavoritesCmd: Command = this.tryGetCommand('addToFavorites')
+    const deleteFromFavoritesCmd: Command = this.tryGetCommand('deleteFromFavorites');
+    const linkToCategoryCmd: Command = this.tryGetCommand('linkToCategory');
+    const exportToZipCmd: Command = this.tryGetCommand("ExportToZip");
 
     const selectedRows = event.selectedRows;
 
-    if (compareOneCommand) {
-      compareOneCommand.visible = selectedRows?.length === 1 && selectedRows[0]?.getValueByName('FSObjType') == 0
+    if (approvalCmd) {
+      approvalCmd.visible = selectedRows?.length === 1 && selectedRows[0]?.getValueByName('FSObjType') == 0
     }
 
-    if (compareThreeCommand) {
-      compareThreeCommand.visible = selectedRows?.length === 1;
+    if (linkToCategoryCmd) {
+      linkToCategoryCmd.visible = selectedRows?.length === 1;
     }
     // if there is only one selected item and its a file and its a file type that can be converted to pdf
-    if (compareFiveCommand) {
-      compareFiveCommand.visible = selectedRows?.length === 1
+    if (convertToPdfCmd) {
+      convertToPdfCmd.visible = selectedRows?.length === 1
         && selectedRows[0]?.getValueByName('FSObjType') == 0
         && this.typeSet?.has(selectedRows[0]?.getValueByName(".fileType"));
     }
 
     // MeetingInv
-    if (meetingInvCompareOneCommand) {
+    if (meetingInvCmd) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) meetingInvCompareOneCommand.visible = true;
-      } else meetingInvCompareOneCommand.visible = false;
+        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) meetingInvCmd.visible = true;
+      } else meetingInvCmd.visible = false;
     }
 
     // Draft
-    if (draftCompareOneCommand) {
+    if (draftCmd) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) draftCompareOneCommand.visible = true;
-      } else draftCompareOneCommand.visible = false;
+        if (fileExt.toLowerCase() !== "" && selectedRows[0]?.getValueByName('FSObjType') == 0) draftCmd.visible = true;
+      } else draftCmd.visible = false;
     }
 
     // shoppingCart
-    if (shoppingCartCompareOneCommand) {
+    if (shoppingCartCmd) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType")
-        if (fileExt.toLowerCase() !== "") shoppingCartCompareOneCommand.visible = true;
-      } else shoppingCartCompareOneCommand.visible = false;
+        if (fileExt.toLowerCase() !== "") shoppingCartCmd.visible = true;
+      } else shoppingCartCmd.visible = false;
     }
 
     // addToFavorites
-    if (addToFavoritesCompareOneCommand) {
+    if (addToFavoritesCmd) {
       if (selectedRows?.length > 0) {
         const allSelectedFiles = selectedRows.map(row => row.getValueByName('FileRef'));
         const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
         // Only show the button if every selected file is NOT in favorites.
-        addToFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
+        addToFavoritesCmd.visible = allSelectedFiles.every(file => !allFavoritesFiles.includes(file));
       } else {
-        addToFavoritesCompareOneCommand.visible = false;
+        addToFavoritesCmd.visible = false;
       }
     }
 
     // deleteFromFavorites
-    if (deleteFromFavoritesCompareOneCommand) {
+    if (deleteFromFavoritesCmd) {
       if (selectedRows?.length > 0) {
         const allSelectedFiles = selectedRows.map(row => row.getValueByName('FileRef'));
         const allFavoritesFiles = [...this.favorites.map(fav => fav.fileRef), ...this.favoritesAddin.map(favAddin => favAddin.Path)];
         // Only show the button if every selected file IS in favorites.
-        deleteFromFavoritesCompareOneCommand.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
+        deleteFromFavoritesCmd.visible = allSelectedFiles.every(file => allFavoritesFiles.includes(file));
       } else {
-        deleteFromFavoritesCompareOneCommand.visible = false;
+        deleteFromFavoritesCmd.visible = false;
       }
     }
 
     // mergeToPDF
-    if (mergeToPDFCompareOneCommand) {
+    if (mergeToPDFCmd) {
       if (selectedRows?.length > 0) {
         const fileExt = selectedRows[0].getValueByName(".fileType").toLowerCase();
 
-        mergeToPDFCompareOneCommand.visible = this.typeToConvert?.has(fileExt);
+        mergeToPDFCmd.visible = this.typeToConvert?.has(fileExt);
       } else {
-        mergeToPDFCompareOneCommand.visible = false;
+        mergeToPDFCmd.visible = false;
       }
     }
 
-    if (compareSixCommand) {
-      compareSixCommand.visible = selectedRows?.length >= 1;
+    if (exportToZipCmd) {
+      exportToZipCmd.visible = selectedRows?.length >= 1;
     }
 
-    // // if there is one selected item or more and its a file
-    // if (externalSharingCompareOneCommand) {
-    //   if (event.selectedRows?.length > 0) {
-    //     const fileExt = event.selectedRows[0].getValueByName(".fileType")
-    //     if (fileExt.toLowerCase() !== "") externalSharingCompareOneCommand.visible = true;
-    //   } else externalSharingCompareOneCommand.visible = false;
-    // }
-
-    // if (compareThreeCommand) {
-    //   if (event.selectedRows?.length > 0) {
-    //     const isFolder = Boolean(
-    //       event.selectedRows.find(
-    //         (r) => r.getValueByName("ContentType") === "Folder"
-    //       )
-    //     );
-    //     compareThreeCommand.visible = !isFolder;
-    //   } else compareThreeCommand.visible = false;
-    // }
-
-    // if (compareFourCommand) {
-    //   compareFourCommand.visible = event.selectedRows?.length === 1;
-    // }
-
-    // const compareTwoCommand: Command = this.tryGetCommand("folderHierarchy");
-    // if (compareTwoCommand) {
-    //   compareTwoCommand.visible = event.selectedRows?.length === 1;
-    // }
     this.raiseOnChange();
   }
 }
-// }
