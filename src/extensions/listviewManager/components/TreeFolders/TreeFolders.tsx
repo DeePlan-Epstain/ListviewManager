@@ -108,7 +108,8 @@ export default function TreeFolders({ context, isClose, fileToSave, fileName }: 
         <div
           className={`${modalStyles.modalScreen}`}
           style={{ backgroundColor: "unset" }}
-          onClick={() => isClose()}>
+        // onClick={() => isClose()}
+        >
           <div
             className={`${modalStyles.modal} ${modalStyles.folderExplorerModal}`}
             onClick={(ev: any) => ev.stopPropagation()}
