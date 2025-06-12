@@ -37,6 +37,7 @@ import './../ext.css'
 import MergePDF from "./components/MergePDF/MergePDF.cmp";
 import { Version } from '@microsoft/sp-core-library';
 import { clickEvent } from './service/thirdPartyOpen.service'
+import { CMD } from "./models/CMD";
 const { solution } = require("../../../config/package-solution.json");
 
 export interface IListviewManagerCommandSetProperties {
@@ -78,7 +79,7 @@ export default class ListviewManagerCommandSet extends BaseListViewCommandSet<IL
   private handleCmds() {
     const commandConfigs = this.context.manifest.items;
 
-    const cmdArr: any[] = Object.entries(commandConfigs).map(([id, config]) => ({
+    const cmdArr: CMD[] = Object.entries(commandConfigs).map(([id, config]) => ({
       ...config,
       id,
     }));
