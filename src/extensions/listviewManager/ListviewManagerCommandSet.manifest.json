@@ -8,13 +8,6 @@
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "items": {
-    "shoppingCart": {
-      "title": {
-        "default": "הוסף לסל"
-      },
-      "iconImageUrl": "./assets/imgs/cart.svg",
-      "type": "command"
-    },
     "mergeToPDF": {
       "title": {
         "default": "איחוד ל-PDF"
@@ -24,9 +17,31 @@
     },
     "addToFavorites": {
       "title": {
-        "default": "הוסף למועדפים"
+        "default": "הוספה למועדפים"
       },
       "iconImageUrl": "./assets/imgs/addToFavorites.svg",
+      "type": "command"
+    },
+    "shoppingCart": {
+      "title": {
+        "default": "הוספה לסל"
+      },
+      "iconImageUrl": "./assets/imgs/cart.svg",
+      "type": "command"
+    },
+    "draft": {
+      "title": {
+        "default": "העבר קובץ במייל"
+      },
+      "iconImageUrl": "./assets/imgs/share.svg",
+      "type": "command"
+    },
+    "convertToPDF": {
+      "position": 3,
+      "title": {
+        "default": "המרה ל-PDF"
+      },
+      "iconImageUrl": "./assets/imgs/pdf.svg",
       "type": "command"
     },
     "deleteFromFavorites": {
@@ -50,15 +65,8 @@
         "default": "יצירת היררכית תיקיות"
       },
       "iconImageUrl": "./assets/imgs/add.svg",
-      "type": "command"
-    },
-    "convertToPDF": {
-      "position": 3,
-      "title": {
-        "default": "המרה ל-PDF"
-      },
-      "iconImageUrl": "./assets/imgs/pdf.svg",
-      "type": "command"
+      "type": "command",
+      "visible": true
     },
     "ExportToZip": {
       "position": 3,
@@ -68,13 +76,6 @@
       "iconImageUrl": "./assets/imgs/zip.svg",
       "type": "command"
     },
-    "linkToCategory": {
-      "title": {
-        "default": "קישור לקטגוריה"
-      },
-      "iconImageUrl": "./assets/imgs/shortcut.svg",
-      "type": "command"
-    },
     "MeetingInv": {
       "title": {
         "default": "זימון פגישה"
@@ -82,11 +83,11 @@
       "iconImageUrl": "./assets/imgs/meeting.svg",
       "type": "command"
     },
-    "draft": {
+    "linkToCategory": {
       "title": {
-        "default": "העבר קובץ במייל"
+        "default": "קישור לקטגוריה"
       },
-      "iconImageUrl": "./assets/imgs/share.svg",
+      "iconImageUrl": "./assets/imgs/shortcut.svg",
       "type": "command"
     }
   }

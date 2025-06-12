@@ -3,16 +3,12 @@ import styles from "./LinkToCCategory.module.scss";
 import { SPFI } from "@pnp/sp";
 import { SelectedFile } from "../../models/global.model";
 import modalStyles from "../../styles/modalStyles.module.scss";
-import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
+import { IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
 import { Button } from "@mui/material";
 import { decimalToBinaryArray } from "../../service/util.service";
 import { ListViewCommandSetContext } from "@microsoft/sp-listview-extensibility";
 import { FolderExplorer } from "@pnp/spfx-controls-react";
-import { getSiteCollections, createSitesOptions, createSitesMap } from "../../service/link.service";
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { getSiteCollections } from "../../service/link.service";
 import { Site } from "../../models/LinkToCategory";
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
@@ -41,16 +37,10 @@ export default function LinkToCategory({
 }: LinkToCategoryProps) {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [unauthorizedFiles, setUnauthorizedFiles] = useState<SelectedFile[]>([]);
-  // const [siteMap, setMap] = useState<Map<string, string>>(new Map());
-
   const [selectedSite, setSelectedSite] = useState<Site>(null);
   const [siteOptions, setOptions] = useState<Site[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<IFolder>(null);
   const [isLoading, setIsLoading] = useState<Boolean>(true);
-  // const [siteOptions, setOptions] = useState<string[]>([]);
-
-  // const [selectedSite, setSite] = useState<string>("");
-  // const [selectedSiteUrl, setSelectedSiteUrl] = useState<string>(context.pageContext.site.serverRelativeUrl);
 
   useEffect(() => {
     initMoveFile();
